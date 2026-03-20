@@ -2,7 +2,7 @@ import { useMutation } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../convex/_generated/api'
 import { HostApp } from './components/host/HostApp'
-import { Marquee } from './components/Marquee'
+
 import { PlayerApp } from './components/player/PlayerApp'
 import { useRoute } from './lib/useRoute'
 
@@ -15,22 +15,16 @@ function App() {
 
   if (mode === 'player' && gameCode) {
     return (
-      <>
-        <div className="app-shell">
-          <PlayerApp gameCode={gameCode} />
-        </div>
-        <Marquee />
-      </>
+      <div className="app-shell">
+        <PlayerApp gameCode={gameCode} />
+      </div>
     )
   }
 
   return (
-    <>
-      <div className="app-shell">
-        <Landing navigate={navigate} />
-      </div>
-      <Marquee />
-    </>
+    <div className="app-shell">
+      <Landing navigate={navigate} />
+    </div>
   )
 }
 
