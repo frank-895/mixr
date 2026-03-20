@@ -3,6 +3,36 @@ import { internal } from './_generated/api'
 import { mutation, query } from './_generated/server'
 import { MEME_IMAGES } from './seed'
 
+export const skipPhase = mutation({
+  args: { gameId: v.id('games') },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId)
+    if (!game || game.state !== 'playing') return
+
+    const round = await ctx.db
+      .query('rounds')
+      .withIndex('by_gameId_and_roundNumber', (q) =>
+        q.eq('gameId', args.gameId).eq('roundNumber', game.currentRound)
+      )
+      .unique()
+    if (!round) return
+
+    if (round.state === 'caption') {
+      await ctx.runMutation(
+        internal.internal.roundTransitions.endCaptionPhase,
+        { roundId: round._id }
+      )
+    } else if (round.state === 'open') {
+      await ctx.runMutation(internal.internal.roundTransitions.endOpenPhase, {
+        roundId: round._id,
+      })
+    } else if (round.state === 'finished') {
+      // Round finished but game still playing — means we're between rounds.
+      // The endOpenPhase already handles advancing, so nothing extra needed.
+    }
+  },
+})
+
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 function generateCode(): string {

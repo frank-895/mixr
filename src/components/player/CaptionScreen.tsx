@@ -116,6 +116,12 @@ export function CaptionScreen({
             placeholder="MAKE IT FUNNY..."
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, 140))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmit()
+              }
+            }}
             maxLength={140}
           />
           <div className="char-counter">

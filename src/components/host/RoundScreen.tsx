@@ -1,4 +1,4 @@
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 import { useCountdown } from '../../lib/useCountdown'
@@ -6,6 +6,7 @@ import { Leaderboard } from './Leaderboard'
 
 export function RoundScreen({ game }: { game: Doc<'games'> }) {
   const round = useQuery(api.rounds.getCurrent, { gameId: game._id })
+  const skipPhase = useMutation(api.games.skipPhase)
 
   if (!round) {
     return (
@@ -49,6 +50,18 @@ export function RoundScreen({ game }: { game: Doc<'games'> }) {
               : 'ROUND COMPLETE'}
         </div>
         {round.state !== 'finished' && <Timer targetTime={targetTime} />}
+        {round.state !== 'finished' && (
+          <button
+            type="button"
+            className="brutal-btn brutal-btn--pink brutal-btn--small"
+            onClick={() => skipPhase({ gameId: game._id })}
+          >
+            <span>SKIP</span>
+            <span className="material-symbols-outlined" aria-hidden="true">
+              skip_next
+            </span>
+          </button>
+        )}
       </header>
 
       {/* Main Layout */}
