@@ -2,6 +2,8 @@ import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
+type ScoreEntry = { playerId: string; name: string; totalScore: number }
+
 export function FinalResults({
   gameId,
   playerId,
@@ -26,8 +28,8 @@ export function FinalResults({
   }
 
   const winner = scores[0]
-  const rank = scores.findIndex((s) => s.playerId === playerId) + 1
-  const myScore = scores.find((s) => s.playerId === playerId)
+  const rank = scores.findIndex((s: ScoreEntry) => s.playerId === playerId) + 1
+  const myScore = scores.find((s: ScoreEntry) => s.playerId === playerId)
 
   return (
     <>
@@ -102,7 +104,7 @@ export function FinalResults({
         <div className="leaderboard">
           <div className="leaderboard-title">LOSERS BRACKET</div>
           <ol className="leaderboard-list">
-            {scores.slice(1).map((entry, i) => (
+            {scores.slice(1).map((entry: ScoreEntry, i: number) => (
               <li
                 key={entry.playerId}
                 className={`leaderboard-row ${entry.playerId === playerId ? 'you' : ''}`}

@@ -2,6 +2,8 @@ import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 
+type ScoreEntry = { playerId: string; name: string; totalScore: number }
+
 export function FinalResults({ game }: { game: Doc<'games'> }) {
   const scores = useQuery(api.players.getScores, { gameId: game._id })
 
@@ -66,7 +68,7 @@ export function FinalResults({ game }: { game: Doc<'games'> }) {
           <div className="leaderboard">
             <div className="leaderboard-title">LOSERS BRACKET</div>
             <ol className="leaderboard-list">
-              {scores.slice(1).map((entry, i) => (
+              {scores.slice(1).map((entry: ScoreEntry, i: number) => (
                 <li key={entry.playerId} className="leaderboard-row">
                   <div className="leaderboard-left">
                     <span className="leaderboard-rank">{i + 2}</span>

@@ -39,7 +39,7 @@ export function Lobby({
 
         <div className="player-list" style={{ maxWidth: 400 }}>
           <h3 style={{ marginBottom: 8 }}>PLAYERS ({players?.length ?? 0})</h3>
-          {players?.map((p) => (
+          {players?.map((p: Doc<'players'>) => (
             <div key={p._id} className="player-list-item">
               {p.name}
             </div>

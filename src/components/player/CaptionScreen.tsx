@@ -72,7 +72,8 @@ export function CaptionScreen({
 
   const formatted = String(seconds).padStart(2, '0')
   const sortedCaptions = [...(myCaptions ?? [])].sort(
-    (a, b) => b.createdAt - a.createdAt
+    (a, b) =>
+      (b.createdAt ?? b._creationTime) - (a.createdAt ?? a._creationTime)
   )
 
   return (

@@ -16,7 +16,10 @@ export function RoundResults({
     roundId: round._id,
   })
 
-  const totalScore = (captions ?? []).reduce((sum, c) => sum + c.score, 0)
+  const totalScore = (captions ?? []).reduce(
+    (sum: number, c: Doc<'captions'>) => sum + c.score,
+    0
+  )
 
   return (
     <main className="screen center">
@@ -38,7 +41,7 @@ export function RoundResults({
           >
             YOUR CAPTIONS ({captions.length}):
           </p>
-          {captions.map((c) => (
+          {captions.map((c: Doc<'captions'>) => (
             <p
               key={c._id}
               style={{

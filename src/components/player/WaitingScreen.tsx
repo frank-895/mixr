@@ -1,6 +1,6 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
-import type { Id } from '../../../convex/_generated/dataModel'
+import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
 export function WaitingScreen({ gameId }: { gameId: Id<'games'> }) {
   const players = useQuery(api.players.listByGame, { gameId })
@@ -27,7 +27,7 @@ export function WaitingScreen({ gameId }: { gameId: Id<'games'> }) {
 
       <div className="player-list" style={{ marginTop: 24 }}>
         <h3 style={{ marginBottom: 8 }}>PLAYERS ({players?.length ?? 0})</h3>
-        {players?.map((p) => (
+        {players?.map((p: Doc<'players'>) => (
           <div key={p._id} className="player-list-item">
             {p.name}
           </div>
