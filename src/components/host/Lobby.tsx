@@ -36,6 +36,21 @@ export function Lobby({
             />
           </div>
           <span className="qr-section__code">{gameCode}</span>
+          {import.meta.env.DEV && (
+            <a
+              href={joinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: 12,
+                color: '#888',
+                textDecoration: 'underline',
+                marginTop: 4,
+              }}
+            >
+              Open player view ↗
+            </a>
+          )}
         </div>
 
         <div className="lobby__players">
