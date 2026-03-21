@@ -7,16 +7,10 @@ import {
   useMotionValue,
   useTransform,
 } from 'motion/react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
-import {
-  hapticHeavy,
-  hapticLight,
-  hapticMedium,
-  unlockHaptics,
-} from '../../lib/haptics'
 import { useActionFeedback } from '../../lib/useActionFeedback'
 import { useCountdown } from '../../lib/useCountdown'
 
@@ -37,7 +31,6 @@ function SwipeableCard({
   const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12])
   const approveOpacity = useTransform(x, [0, SWIPE_THRESHOLD], [0, 1])
   const rejectOpacity = useTransform(x, [-SWIPE_THRESHOLD, 0], [1, 0])
-  const pastThreshold = useRef(false)
 
   const flyOff = (dir: number) => {
     const flyX = dir * 500
@@ -46,17 +39,6 @@ function SwipeableCard({
       animate(x, flyX, { duration: 0.25, ease: 'easeIn' }),
       animate(rotate, flyRotate, { duration: 0.25, ease: 'easeIn' }),
     ])
-  }
-
-  // Use onDrag (direct pointer event context) so navigator.vibrate is allowed
-  const handleDrag = (_: unknown, info: PanInfo) => {
-    const crossed = Math.abs(info.offset.x) > SWIPE_THRESHOLD
-    if (crossed && !pastThreshold.current) {
-      hapticMedium()
-      pastThreshold.current = true
-    } else if (!crossed) {
-      pastThreshold.current = false
-    }
   }
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -77,8 +59,6 @@ function SwipeableCard({
       key={candidate.captionId}
       drag="x"
       dragElastic={0.9}
-      onDragStart={unlockHaptics}
-      onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       style={{ x, rotate, cursor: 'grab', touchAction: 'pan-y' }}
       initial={{ scale: 0.95, opacity: 0, y: 30 }}
@@ -186,11 +166,6 @@ export function VoteScreen({
 
   const handleVote = async (value: boolean) => {
     if (!current || submitting) return
-    if (value) {
-      hapticHeavy()
-    } else {
-      hapticLight()
-    }
     setSubmitting(true)
     clearError()
     try {
