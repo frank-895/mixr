@@ -186,6 +186,122 @@ export const listByRound = query({
   },
 })
 
+export const getTopCaptions = query({
+  args: { roundId: v.id('rounds'), limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const round = await ctx.db.get(args.roundId)
+    if (!round) return []
+
+    const limit = args.limit ?? 3
+    const captions = await ctx.db
+      .query('captions')
+      .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
+      .take(200)
+
+    captions.sort((a, b) => b.score - a.score)
+    const top = captions.slice(0, limit)
+
+    const results = []
+    for (const c of top) {
+      const player = await ctx.db.get(c.userId)
+      results.push({
+        captionId: c._id,
+        text: c.text,
+        score: c.score,
+        playerName: player?.name ?? 'Unknown',
+        imageUrl: round.imageUrl,
+        roundNumber: round.roundNumber,
+      })
+    }
+    return results
+  },
+})
+
+export const getGameTopCaptions = query({
+  args: { gameId: v.id('games'), limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 3
+    const rounds = await ctx.db
+      .query('rounds')
+      .withIndex('by_gameId_and_roundNumber', (q) =>
+        q.eq('gameId', args.gameId)
+      )
+      .take(10)
+
+    const allCaptions: Array<{
+      captionId: Id<'captions'>
+      text: string
+      score: number
+      userId: Id<'players'>
+      imageUrl: string
+      roundNumber: number
+    }> = []
+
+    for (const round of rounds) {
+      const captions = await ctx.db
+        .query('captions')
+        .withIndex('by_roundId', (q) => q.eq('roundId', round._id))
+        .take(200)
+
+      for (const c of captions) {
+        allCaptions.push({
+          captionId: c._id,
+          text: c.text,
+          score: c.score,
+          userId: c.userId,
+          imageUrl: round.imageUrl,
+          roundNumber: round.roundNumber,
+        })
+      }
+    }
+
+    allCaptions.sort((a, b) => b.score - a.score)
+    const top = allCaptions.slice(0, limit)
+
+    const results = []
+    for (const c of top) {
+      const player = await ctx.db.get(c.userId)
+      results.push({
+        captionId: c.captionId,
+        text: c.text,
+        score: c.score,
+        playerName: player?.name ?? 'Unknown',
+        imageUrl: c.imageUrl,
+        roundNumber: c.roundNumber,
+      })
+    }
+    return results
+  },
+})
+
+export const getRoundCaptions = query({
+  args: { roundId: v.id('rounds') },
+  handler: async (ctx, args) => {
+    const round = await ctx.db.get(args.roundId)
+    if (!round) return []
+
+    const captions = await ctx.db
+      .query('captions')
+      .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
+      .take(200)
+
+    const results = []
+    for (const c of captions) {
+      const player = await ctx.db.get(c.userId)
+      results.push({
+        captionId: c._id as string,
+        text: c.text,
+        score: c.score,
+        playerName: player?.name ?? 'Unknown',
+        imageUrl: round.imageUrl,
+      })
+    }
+
+    results.sort((a, b) => b.score - a.score)
+    return results
+  },
+})
+
 export const getPlayerCaptions = query({
   args: { playerId: v.id('players'), roundId: v.id('rounds') },
   handler: async (ctx, args) => {

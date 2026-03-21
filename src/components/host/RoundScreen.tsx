@@ -2,11 +2,17 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 import { useCountdown } from '../../lib/useCountdown'
-import { Leaderboard } from './Leaderboard'
+import { CaptionPhaseOverlay } from './CaptionPhaseOverlay'
+import { RevealScreen } from './RevealScreen'
+import { VotePhaseGrid } from './VotePhaseGrid'
 
 export function RoundScreen({ game }: { game: Doc<'games'> }) {
   const round = useQuery(api.rounds.getCurrent, { gameId: game._id })
   const skipPhase = useMutation(api.games.skipPhase)
+
+  if (round?.state === 'reveal') {
+    return <RevealScreen round={round} game={game} />
+  }
 
   if (!round) {
     return (
@@ -65,17 +71,12 @@ export function RoundScreen({ game }: { game: Doc<'games'> }) {
         </button>
       </header>
 
-      {/* Main Layout */}
-      <div className="host-round-layout">
-        <div className="host-round-main">
-          <div className="meme-frame">
-            <img src={round.imageUrl} alt="Meme template" />
-          </div>
-        </div>
-        <div className="host-round-sidebar">
-          <Leaderboard gameId={game._id} />
-        </div>
-      </div>
+      {/* Main Content */}
+      {round.state === 'caption' ? (
+        <CaptionPhaseOverlay round={round} game={game} />
+      ) : round.state === 'vote' ? (
+        <VotePhaseGrid round={round} game={game} />
+      ) : null}
     </div>
   )
 }

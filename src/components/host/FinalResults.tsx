@@ -1,13 +1,29 @@
 import { useQuery } from 'convex/react'
+import { useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 import { useRoute } from '../../lib/useRoute'
+import { GameRevealScreen } from './RevealScreen'
 
 type ScoreEntry = { playerId: string; name: string; totalScore: number }
 
 export function FinalResults({ game }: { game: Doc<'games'> }) {
   const scores = useQuery(api.players.getScores, { gameId: game._id })
+  const topMemes = useQuery(
+    api.captions.getGameTopCaptions,
+    game.totalRounds > 1 ? { gameId: game._id, limit: 3 } : 'skip'
+  )
+  const [showingReveal, setShowingReveal] = useState(game.totalRounds > 1)
   const { navigate } = useRoute()
+
+  if (showingReveal && topMemes && topMemes.length > 0) {
+    return (
+      <GameRevealScreen
+        topMemes={topMemes}
+        onComplete={() => setShowingReveal(false)}
+      />
+    )
+  }
 
   if (!scores) {
     return (

@@ -30,6 +30,8 @@ export default defineSchema({
     voteEndsAt: v.number(),
     scheduledEndCaptionJobId: v.optional(v.id('_scheduled_functions')),
     scheduledEndVoteJobId: v.optional(v.id('_scheduled_functions')),
+    revealEndsAt: v.optional(v.number()),
+    scheduledEndRevealJobId: v.optional(v.id('_scheduled_functions')),
   }).index('by_gameId_and_roundNumber', ['gameId', 'roundNumber']),
 
   captions: defineTable({

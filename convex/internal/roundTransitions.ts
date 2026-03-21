@@ -1,7 +1,9 @@
 import { v } from 'convex/values'
 import { internal } from '../_generated/api'
+import type { Id } from '../_generated/dataModel'
+import type { MutationCtx } from '../_generated/server'
 import { internalMutation } from '../_generated/server'
-import { GAME_RETENTION_MS } from '../constants'
+import { GAME_RETENTION_MS, REVEAL_PHASE_DURATION_MS } from '../constants'
 import { MEME_IMAGES } from '../seed'
 
 export const endCaptionPhase = internalMutation({
@@ -46,51 +48,101 @@ export const endVotePhase = internalMutation({
       await ctx.scheduler.cancel(round.scheduledEndVoteJobId)
     }
 
+    // Check if there are any captions to reveal
+    const captions = await ctx.db
+      .query('captions')
+      .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
+      .take(1)
+
+    if (captions.length === 0) {
+      // No captions — skip reveal, go straight to finished
+      await ctx.db.patch(args.roundId, {
+        state: 'finished',
+        scheduledEndVoteJobId: undefined,
+      })
+      await advanceGame(ctx, round.gameId)
+      return
+    }
+
+    const now = Date.now()
     await ctx.db.patch(args.roundId, {
-      state: 'finished',
+      state: 'reveal',
       scheduledEndVoteJobId: undefined,
+      revealEndsAt: now + REVEAL_PHASE_DURATION_MS,
     })
 
-    const game = await ctx.db.get(round.gameId)
-    if (!game) return
+    const scheduledEndRevealJobId = await ctx.scheduler.runAfter(
+      REVEAL_PHASE_DURATION_MS,
+      internal.internal.roundTransitions.endRevealPhase,
+      { roundId: args.roundId }
+    )
 
-    if (game.currentRound < game.totalRounds) {
-      const nextRoundNumber = game.currentRound + 1
-      await ctx.db.patch(game._id, { currentRound: nextRoundNumber })
-
-      const imageUrl = MEME_IMAGES[(nextRoundNumber - 1) % MEME_IMAGES.length]
-      const now = Date.now()
-
-      const nextRoundId = await ctx.db.insert('rounds', {
-        gameId: game._id,
-        roundNumber: nextRoundNumber,
-        imageUrl,
-        state: 'caption',
-        captionEndsAt: now + game.captionPhaseDurationMs,
-        voteEndsAt: 0,
-      })
-
-      const scheduledEndCaptionJobId = await ctx.scheduler.runAfter(
-        game.captionPhaseDurationMs,
-        internal.internal.roundTransitions.endCaptionPhase,
-        { roundId: nextRoundId }
-      )
-
-      await ctx.db.patch(nextRoundId, {
-        scheduledEndCaptionJobId,
-      })
-    } else {
-      const finishedAt = Date.now()
-      await ctx.db.patch(game._id, {
-        state: 'finished',
-        finishedAt,
-      })
-
-      await ctx.scheduler.runAfter(
-        GAME_RETENTION_MS,
-        internal.internal.gameCleanup.cleanupFinishedGame,
-        { gameId: game._id }
-      )
-    }
+    await ctx.db.patch(args.roundId, { scheduledEndRevealJobId })
   },
 })
+
+export const endRevealPhase = internalMutation({
+  args: { roundId: v.id('rounds') },
+  handler: async (ctx, args) => {
+    const round = await ctx.db.get(args.roundId)
+    if (!round || round.state !== 'reveal') return
+
+    if (round.scheduledEndRevealJobId) {
+      await ctx.scheduler.cancel(round.scheduledEndRevealJobId)
+    }
+
+    await ctx.db.patch(args.roundId, {
+      state: 'finished',
+      scheduledEndRevealJobId: undefined,
+    })
+
+    await advanceGame(ctx, round.gameId)
+  },
+})
+
+async function advanceGame(
+  ctx: { db: MutationCtx['db']; scheduler: MutationCtx['scheduler'] },
+  gameId: Id<'games'>
+) {
+  const game = await ctx.db.get(gameId)
+  if (!game) return
+
+  if (game.currentRound < game.totalRounds) {
+    const nextRoundNumber = game.currentRound + 1
+    await ctx.db.patch(game._id, { currentRound: nextRoundNumber })
+
+    const imageUrl = MEME_IMAGES[(nextRoundNumber - 1) % MEME_IMAGES.length]
+    const now = Date.now()
+
+    const nextRoundId = await ctx.db.insert('rounds', {
+      gameId: game._id,
+      roundNumber: nextRoundNumber,
+      imageUrl,
+      state: 'caption',
+      captionEndsAt: now + game.captionPhaseDurationMs,
+      voteEndsAt: 0,
+    })
+
+    const scheduledEndCaptionJobId = await ctx.scheduler.runAfter(
+      game.captionPhaseDurationMs,
+      internal.internal.roundTransitions.endCaptionPhase,
+      { roundId: nextRoundId }
+    )
+
+    await ctx.db.patch(nextRoundId, {
+      scheduledEndCaptionJobId,
+    })
+  } else {
+    const finishedAt = Date.now()
+    await ctx.db.patch(game._id, {
+      state: 'finished',
+      finishedAt,
+    })
+
+    await ctx.scheduler.runAfter(
+      GAME_RETENTION_MS,
+      internal.internal.gameCleanup.cleanupFinishedGame,
+      { gameId: game._id }
+    )
+  }
+}

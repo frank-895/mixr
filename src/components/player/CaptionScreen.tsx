@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
@@ -21,10 +21,6 @@ export function CaptionScreen({
   deadline?: number
 }) {
   const submitCaption = useMutation(api.captions.submit)
-  const myCaptions = useQuery(api.captions.getPlayerCaptions, {
-    playerId,
-    roundId: round._id,
-  })
   const timerTarget = deadline ?? round.captionEndsAt
   const seconds = useCountdown(timerTarget)
   const [text, setText] = useState('')
@@ -82,10 +78,6 @@ export function CaptionScreen({
   }
 
   const formatted = String(seconds).padStart(2, '0')
-  const sortedCaptions = [...(myCaptions ?? [])].sort(
-    (a, b) =>
-      (b.createdAt ?? b._creationTime) - (a.createdAt ?? a._creationTime)
-  )
 
   return (
     <>
@@ -155,42 +147,6 @@ export function CaptionScreen({
           >
             {error}
           </p>
-        )}
-
-        {/* Submitted Captions */}
-        {sortedCaptions.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-              }}
-            >
-              YOUR CAPTIONS ({sortedCaptions.length})
-            </p>
-            {sortedCaptions.map((c) => (
-              <div
-                key={c._id}
-                style={{
-                  border: '2px solid var(--black)',
-                  padding: '8px 12px',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  textTransform: 'uppercase',
-                  background: 'var(--white)',
-                }}
-              >
-                "{c.text}"
-                <span style={{ float: 'right', fontWeight: 700 }}>
-                  {c.score > 0 ? '+' : ''}
-                  {c.score} PTS
-                </span>
-              </div>
-            ))}
-          </div>
         )}
       </main>
 

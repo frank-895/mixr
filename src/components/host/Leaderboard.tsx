@@ -15,7 +15,7 @@ export function Leaderboard({ gameId }: { gameId: Id<'games'> }) {
       <div className="leaderboard-title">LEADERBOARD</div>
       <ol className="leaderboard-list">
         <AnimatePresence initial={false}>
-          {scores.map((entry: ScoreEntry, i: number) => (
+          {scores.slice(0, 5).map((entry: ScoreEntry, i: number) => (
             <motion.li
               key={entry.playerId}
               layout
