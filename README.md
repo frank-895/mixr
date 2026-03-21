@@ -73,3 +73,22 @@ Notes:
 - Bots now caption and vote on per-bot time intervals for a worst-case load pattern, rather than a fixed number of actions per round.
 - Start the game manually from the host UI after the bots have joined.
 - Use `pnpm load-demo -- --gameCode <CODE>` from the repo root.
+
+## Convex wipe
+
+Clear all schema-defined app and auth tables from the current Convex deployment:
+
+```bash
+pnpm wipe:convex
+```
+
+Target production explicitly:
+
+```bash
+pnpm wipe:convex -- --prod
+```
+
+Notes:
+
+- The script always requires interactive terminal approval before running any destructive Convex CLI command.
+- This clears app tables and auth tables only. It does not clear Convex system tables such as `_scheduled_functions` or `_storage`.

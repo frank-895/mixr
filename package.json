@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "load-demo": "node scripts/load-demo.ts",
+    "wipe:convex": "node scripts/wipe-convex.ts",
     "format": "biome format --write .",
     "format:check": "biome format . --check",
     "lint": "biome lint .",
