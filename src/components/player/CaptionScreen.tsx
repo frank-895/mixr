@@ -61,11 +61,15 @@ export function CaptionScreen({
     setSubmitting(true)
     clearError()
     try {
-      await submitCaption({
+      const result = await submitCaption({
         playerId,
         roundId: round._id,
         text: text.trim(),
       })
+      if (result.status === 'removed') {
+        reject(result.message, 'CAPTION REJECTED')
+        return
+      }
       setText('')
       setCooldownEnd(Date.now() + COOLDOWN_SECONDS * 1000)
       setCooldownLeft(COOLDOWN_SECONDS)

@@ -2,6 +2,7 @@ import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
 import { mutation, type QueryCtx, query } from './_generated/server'
+import { getPlayerModerationError, isPlayerKicked } from './captionModeration'
 import { VOTE_COOLDOWN_MS } from './constants'
 
 type CandidateGroup = {
@@ -65,6 +66,7 @@ async function getRoundPlayers(
     .query('players')
     .withIndex('by_gameId', (q) => q.eq('gameId', round.gameId))
     .take(100)
+    .then((players) => players.filter((player) => !isPlayerKicked(player)))
 }
 
 async function isPlayerInRoundGame(
@@ -130,6 +132,11 @@ export const getCandidates = query({
     const groups = await getCandidateGroups(ctx, args)
     const votedSemanticKeys = await getVotedSemanticKeys(ctx, args)
     const roundPlayers = await getRoundPlayers(ctx, args.roundId)
+    const player = await ctx.db.get(args.playerId)
+
+    if (!player || isPlayerKicked(player)) {
+      return []
+    }
 
     const candidates: Doc<'captions'>[] = groups
       .filter((group) => !votedSemanticKeys.has(group.semanticKeyCaptionId))
@@ -170,6 +177,16 @@ export const castVote = mutation({
 
     const player = await ctx.db.get(args.playerId)
     if (!player) throw new Error('VOTE REJECTED')
+    const playerModerationError = getPlayerModerationError(player)
+    if (playerModerationError) {
+      console.info('[mixr-moderation] vote-blocked-kicked-player', {
+        playerId: player._id,
+        playerName: player.name,
+        kickedAt: player.kickedAt ?? null,
+        kickReason: player.kickReason ?? null,
+      })
+      throw new Error(playerModerationError)
+    }
 
     const round = await ctx.db.get(caption.roundId)
     if (!round) throw new Error('VOTE REJECTED')

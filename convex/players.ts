@@ -44,6 +44,8 @@ export const join = mutation({
     const playerId = await ctx.db.insert('players', {
       gameId: args.gameId,
       name: normalized,
+      kickedAt: undefined,
+      kickReason: undefined,
     })
 
     return playerId
@@ -53,10 +55,12 @@ export const join = mutation({
 export const listByGame = query({
   args: { gameId: v.id('games') },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const players = await ctx.db
       .query('players')
       .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
       .take(MAX_PLAYERS_PER_GAME)
+
+    return players.filter((player) => player.kickedAt === undefined)
   },
 })
 
@@ -103,6 +107,10 @@ export const getScores = query({
     const scores: { playerId: string; name: string; totalScore: number }[] = []
 
     for (const player of players) {
+      if (player.kickedAt !== undefined) {
+        continue
+      }
+
       let totalScore = 0
       const captions = await ctx.db
         .query('captions')

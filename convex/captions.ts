@@ -1,6 +1,11 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
+import type { Id } from './_generated/dataModel'
 import { mutation, query } from './_generated/server'
+import {
+  getBlacklistRejectionMessage,
+  getPlayerModerationError,
+} from './captionModeration'
 import { CAPTION_SUBMISSION_COOLDOWN_MS } from './constants'
 import { MAX_CAPTION_LENGTH, normalizeCaptionText } from './input'
 
@@ -10,7 +15,13 @@ export const submit = mutation({
     roundId: v.id('rounds'),
     text: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<
+    | { status: 'ok'; captionId: Id<'captions'> }
+    | { status: 'removed'; message: string }
+  > => {
     const round = await ctx.db.get(args.roundId)
     if (!round) throw new Error('CAPTION REJECTED')
     const player = await ctx.db.get(args.playerId)
@@ -18,6 +29,8 @@ export const submit = mutation({
     if (player.gameId !== round.gameId) {
       throw new Error('CAPTION REJECTED')
     }
+    const playerModerationError = getPlayerModerationError(player)
+    if (playerModerationError) throw new Error(playerModerationError)
 
     const now = Date.now()
 
@@ -29,6 +42,23 @@ export const submit = mutation({
     if (!normalized) throw new Error('WRITE A CAPTION')
     if (normalized.length > MAX_CAPTION_LENGTH) {
       throw new Error(`KEEP IT UNDER ${MAX_CAPTION_LENGTH}`)
+    }
+    const moderationError = getBlacklistRejectionMessage(args.text)
+    if (moderationError) {
+      await ctx.db.patch(player._id, {
+        kickedAt: now,
+        kickReason: 'blacklist',
+      })
+      const updatedPlayer = await ctx.db.get(player._id)
+      console.info('[mixr-moderation] player-kicked', {
+        playerId: player._id,
+        playerName: player.name,
+        roundId: args.roundId,
+        text: args.text,
+        kickedAt: updatedPlayer?.kickedAt ?? null,
+        kickReason: updatedPlayer?.kickReason ?? null,
+      })
+      return { status: 'removed', message: moderationError }
     }
 
     // Enforce 5s cooldown between submissions
@@ -73,7 +103,7 @@ export const submit = mutation({
       { captionId }
     )
 
-    return captionId
+    return { status: 'ok', captionId }
   },
 })
 

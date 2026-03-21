@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as captionModeration from "../captionModeration.js";
 import type * as captionText from "../captionText.js";
 import type * as captions from "../captions.js";
 import type * as constants from "../constants.js";
@@ -29,6 +30,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  captionModeration: typeof captionModeration;
   captionText: typeof captionText;
   captions: typeof captions;
   constants: typeof constants;

@@ -15,6 +15,8 @@ export default defineSchema({
   players: defineTable({
     gameId: v.id('games'),
     name: v.string(),
+    kickedAt: v.optional(v.number()),
+    kickReason: v.optional(v.literal('blacklist')),
   })
     .index('by_gameId', ['gameId'])
     .index('by_gameId_and_name', ['gameId', 'name']),

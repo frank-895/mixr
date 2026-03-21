@@ -6,6 +6,7 @@ import { usePlayerId } from '../../lib/usePlayerId'
 import { CaptionScreen } from './CaptionScreen'
 import { FinalResults } from './FinalResults'
 import { JoinScreen } from './JoinScreen'
+import { RemovedScreen } from './RemovedScreen'
 import { RoundResults } from './RoundResults'
 import { VoteScreen } from './VoteScreen'
 import { WaitingScreen } from './WaitingScreen'
@@ -19,9 +20,27 @@ export function PlayerApp({ gameCode }: { gameCode: string }) {
   useEffect(() => {
     if (!playerId || player !== null) return
 
+    console.info('[mixr-moderation] player-session-missing', {
+      gameCode,
+      playerId,
+    })
     setPlayerId(null)
     setKickedMessage('YOU WERE REMOVED BY THE HOST')
-  }, [player, playerId, setPlayerId])
+  }, [gameCode, player, playerId, setPlayerId])
+
+  useEffect(() => {
+    if (!playerId || player === undefined) return
+
+    console.info('[mixr-moderation] player-query-state', {
+      gameCode,
+      playerId,
+      playerExists: player !== null,
+      kickedAt:
+        player && 'kickedAt' in player ? (player.kickedAt ?? null) : null,
+      kickReason:
+        player && 'kickReason' in player ? (player.kickReason ?? null) : null,
+    })
+  }, [gameCode, player, playerId])
 
   if (game === undefined) {
     return <div className="screen center">Loading...</div>
@@ -47,6 +66,10 @@ export function PlayerApp({ gameCode }: { gameCode: string }) {
 
   if (player === undefined) {
     return <div className="screen center">Loading...</div>
+  }
+
+  if (player?.kickedAt !== undefined) {
+    return <RemovedScreen />
   }
 
   if (game.state === 'lobby') {
