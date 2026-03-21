@@ -17,9 +17,9 @@ const CYCLE_INTERVAL_MS = 1800
 
 function randomPosition() {
   return {
-    top: Math.random() * 60 + 5, // 5%–65% so cards stay in view
-    left: Math.random() * 55 + 5, // 5%–60%
-    rotate: (Math.random() - 0.5) * 12, // -6° to 6°
+    top: Math.random() * 75 + 2, // 2%–77% so cards stay in view
+    left: Math.random() * 75 + 2, // 2%–77%
+    rotate: (Math.random() - 0.5) * 24, // -12° to 12°
   }
 }
 
