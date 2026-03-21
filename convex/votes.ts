@@ -4,21 +4,27 @@ import type { Doc, Id } from './_generated/dataModel'
 import { mutation, type QueryCtx, query } from './_generated/server'
 import { VOTE_COOLDOWN_MS } from './input'
 
-function pickCaptionToShow(members: Doc<'captions'>[]): Doc<'captions'> | null {
-  if (members.length === 0) return null
-
-  return [...members].sort((a, b) => {
-    if (a.exposureCount !== b.exposureCount) {
-      return a.exposureCount - b.exposureCount
-    }
-
-    return (a.createdAt ?? a._creationTime) - (b.createdAt ?? b._creationTime)
-  })[0]
-}
-
 type CandidateGroup = {
   semanticKeyCaptionId: Id<'captions'>
   members: Doc<'captions'>[]
+}
+
+function stableHash(input: string): number {
+  let hash = 2166136261
+
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+
+  return hash >>> 0
+}
+
+function compareByStableHash(aKey: string, bKey: string): number {
+  const hashDiff = stableHash(aKey) - stableHash(bKey)
+  if (hashDiff !== 0) return hashDiff
+
+  return aKey.localeCompare(bKey)
 }
 
 async function getCandidateGroups(
@@ -48,6 +54,19 @@ async function getVotedSemanticKeys(
   return new Set(playerVotes.map((vote) => vote.semanticKeyCaptionId))
 }
 
+async function getRoundPlayers(
+  ctx: QueryCtx,
+  roundId: Id<'rounds'>
+): Promise<Doc<'players'>[]> {
+  const round = await ctx.db.get(roundId)
+  if (!round) return []
+
+  return await ctx.db
+    .query('players')
+    .withIndex('by_gameId', (q) => q.eq('gameId', round.gameId))
+    .take(100)
+}
+
 async function isPlayerInRoundGame(
   ctx: QueryCtx,
   args: { playerId: Id<'players'>; roundId: Id<'rounds'> }
@@ -58,6 +77,40 @@ async function isPlayerInRoundGame(
   ])
 
   return Boolean(player && round && player.gameId === round.gameId)
+}
+
+function pickAssignedCaptionForPlayer(args: {
+  roundId: Id<'rounds'>
+  playerId: Id<'players'>
+  semanticKeyCaptionId: Id<'captions'>
+  members: Doc<'captions'>[]
+  players: Doc<'players'>[]
+}): Doc<'captions'> | null {
+  const authorIds = new Set<Id<'players'>>(
+    args.members.map((member) => member.userId)
+  )
+  const eligiblePlayers = [...args.players]
+    .filter((player) => !authorIds.has(player._id))
+    .sort((a, b) =>
+      compareByStableHash(
+        `${args.roundId}:${args.semanticKeyCaptionId}:${a._id}`,
+        `${args.roundId}:${args.semanticKeyCaptionId}:${b._id}`
+      )
+    )
+
+  const eligiblePlayerIndex = eligiblePlayers.findIndex(
+    (player) => player._id === args.playerId
+  )
+  if (eligiblePlayerIndex === -1 || args.members.length === 0) return null
+
+  const orderedMembers = [...args.members].sort((a, b) =>
+    compareByStableHash(
+      `${args.roundId}:${args.semanticKeyCaptionId}:${a._id}`,
+      `${args.roundId}:${args.semanticKeyCaptionId}:${b._id}`
+    )
+  )
+
+  return orderedMembers[eligiblePlayerIndex % orderedMembers.length] ?? null
 }
 
 export const getCandidates = query({
@@ -74,21 +127,28 @@ export const getCandidates = query({
       return []
     }
 
-    const round = await ctx.db.get(args.roundId)
-    if (!round) return []
-
     const groups = await getCandidateGroups(ctx, args)
     const votedSemanticKeys = await getVotedSemanticKeys(ctx, args)
+    const roundPlayers = await getRoundPlayers(ctx, args.roundId)
 
     const candidates: Doc<'captions'>[] = groups
       .filter((group) => !votedSemanticKeys.has(group.semanticKeyCaptionId))
-      .map((group) => pickCaptionToShow(group.members))
+      .sort((a, b) =>
+        compareByStableHash(
+          `${args.roundId}:${a.semanticKeyCaptionId}`,
+          `${args.roundId}:${b.semanticKeyCaptionId}`
+        )
+      )
+      .map((group) =>
+        pickAssignedCaptionForPlayer({
+          roundId: args.roundId,
+          playerId: args.playerId,
+          semanticKeyCaptionId: group.semanticKeyCaptionId,
+          members: group.members,
+          players: roundPlayers,
+        })
+      )
       .filter((caption): caption is Doc<'captions'> => caption !== null)
-
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[candidates[i], candidates[j]] = [candidates[j], candidates[i]]
-    }
 
     return candidates.slice(0, args.count).map((c) => ({
       captionId: c._id,

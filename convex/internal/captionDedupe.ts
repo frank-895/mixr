@@ -136,8 +136,7 @@ export const getVoteCandidateGroups = internalQuery({
     const readyCaptions = captions.filter(
       (caption) =>
         caption.dedupeStatus === 'ready' &&
-        caption.semanticKeyCaptionId !== undefined &&
-        caption.userId !== args.playerId
+        caption.semanticKeyCaptionId !== undefined
     )
 
     const groups = new Map<Id<'captions'>, Doc<'captions'>[]>()
@@ -151,11 +150,14 @@ export const getVoteCandidateGroups = internalQuery({
       }
     }
 
-    return Array.from(groups.entries()).map(
-      ([semanticKeyCaptionId, members]) => ({
+    return Array.from(groups.entries())
+      .filter(
+        ([, members]) =>
+          !members.some((member) => member.userId === args.playerId)
+      )
+      .map(([semanticKeyCaptionId, members]) => ({
         semanticKeyCaptionId,
         members,
-      })
-    )
+      }))
   },
 })

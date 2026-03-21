@@ -78,23 +78,10 @@ export const processCaption = internalAction({
       if (exactMatch) {
         const leaderCaptionId =
           exactMatch.semanticKeyCaptionId ?? exactMatch._id
-        const groupTexts = await ctx.runQuery(
-          internal.internal.captionDedupe.getGroupTexts,
-          {
-            roundId: caption.roundId,
-            semanticKeyCaptionId: leaderCaptionId,
-          }
-        )
 
         await ctx.runMutation(internal.internal.captionDedupe.attachToLeader, {
           captionId: args.captionId,
           leaderCaptionId,
-        })
-
-        console.log('caption.embedding grouped', {
-          caption: caption.text,
-          similarTo: groupTexts,
-          matchType: 'exact',
         })
         return
       }
@@ -124,24 +111,9 @@ export const processCaption = internalAction({
         bestLeaderId !== null &&
         bestSimilarity >= EMBEDDING_SIMILARITY_THRESHOLD
       ) {
-        const groupTexts = await ctx.runQuery(
-          internal.internal.captionDedupe.getGroupTexts,
-          {
-            roundId: caption.roundId,
-            semanticKeyCaptionId: bestLeaderId,
-          }
-        )
-
         await ctx.runMutation(internal.internal.captionDedupe.attachToLeader, {
           captionId: args.captionId,
           leaderCaptionId: bestLeaderId,
-        })
-
-        console.log('caption.embedding grouped', {
-          caption: caption.text,
-          similarTo: groupTexts,
-          matchType: 'semantic',
-          similarity: bestSimilarity,
         })
         return
       }
@@ -149,12 +121,6 @@ export const processCaption = internalAction({
       await ctx.runMutation(internal.internal.captionDedupe.markAsLeader, {
         captionId: args.captionId,
         embedding,
-      })
-
-      console.log('caption.embedding grouped', {
-        caption: caption.text,
-        similarTo: [caption.text],
-        matchType: 'new_group',
       })
     } catch (error) {
       console.error('caption.embedding failed', {
