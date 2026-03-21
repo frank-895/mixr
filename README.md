@@ -31,3 +31,44 @@ pnpm typecheck                   # run TypeScript checks
 pnpm check                       # run Biome checks
 pnpm build                       # verify the production build
 ```
+
+## Load / demo harness
+
+Run bots against a manually hosted game:
+
+```bash
+pnpm load-demo -- --gameCode ABCD
+```
+
+Example with a custom bot count and slower join pacing:
+
+```bash
+pnpm load-demo -- --gameCode ABCD --botCount 75 --joinJitterMs 30000
+```
+
+Arguments:
+
+- `--gameCode`
+  Required. The 4-character game code from the host screen.
+- `--botCount`
+  Optional. Number of bots to add. Default: `100`. Maximum: `100`.
+- `--playerCount`
+  Optional legacy alias for `--botCount`.
+- `--waitForHumanPlayer`
+  Optional. `true` or `false`. When `true`, the final success result requires at least one non-bot player to have joined.
+- `--joinJitterMs`
+  Optional. Total join spread window in milliseconds. Higher values make bots appear more slowly. Default: `15000`.
+- `--captionJitterMs`
+  Optional. Caption submission spread window in milliseconds. Default: `8000`.
+- `--voteJitterMs`
+  Optional. Initial vote spread window in milliseconds. Default: `4000`.
+- `--maxErrorRate`
+  Optional. Maximum tolerated soft-failure rate before the run is marked unsuccessful. Default: `0.15`.
+- `--summaryPath`
+  Optional. Output path for the JSON run summary.
+
+Notes:
+
+- The runner reads `VITE_CONVEX_URL` from `.env.local`.
+- Start the game manually from the host UI after the bots have joined.
+- Use `pnpm load-demo -- --gameCode <CODE>` from the repo root.

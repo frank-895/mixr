@@ -8,6 +8,7 @@
     "prepare": "git config core.hooksPath .githooks",
     "dev": "vite",
     "build": "vite build",
+    "load-demo": "node scripts/load-demo.ts",
     "format": "biome format --write .",
     "format:check": "biome format . --check",
     "lint": "biome lint .",
