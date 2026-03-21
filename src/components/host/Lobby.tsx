@@ -12,6 +12,7 @@ export function Lobby({
 }) {
   const players = useQuery(api.players.listByGame, { gameId: game._id })
   const startGame = useMutation(api.games.startGame)
+  const removePlayer = useMutation(api.players.remove)
   const { error, isRejected, clearError, reject } = useActionFeedback()
 
   const joinUrl = `${window.location.origin}?code=${gameCode}`
@@ -26,6 +27,15 @@ export function Lobby({
       await startGame({ gameId: game._id })
     } catch (e) {
       reject(e, "CAN'T START YET")
+    }
+  }
+
+  const handleRemovePlayer = async (playerId: Doc<'players'>['_id']) => {
+    clearError()
+    try {
+      await removePlayer({ gameId: game._id, playerId })
+    } catch (e) {
+      reject(e, "CAN'T REMOVE PLAYER")
     }
   }
 
@@ -77,7 +87,20 @@ export function Lobby({
             <div className="player-chips">
               {players?.map((p) => (
                 <div key={p._id} className="player-chip">
-                  {p.name}
+                  <span>{p.name}</span>
+                  <button
+                    type="button"
+                    className="player-chip__remove"
+                    onClick={() => void handleRemovePlayer(p._id)}
+                    aria-label={`Remove ${p.name}`}
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      aria-hidden="true"
+                    >
+                      close
+                    </span>
+                  </button>
                 </div>
               ))}
             </div>

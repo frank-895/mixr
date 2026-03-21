@@ -60,6 +60,29 @@ export const listByGame = query({
   },
 })
 
+export const get = query({
+  args: { playerId: v.id('players') },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.playerId)
+  },
+})
+
+export const remove = mutation({
+  args: { gameId: v.id('games'), playerId: v.id('players') },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId)
+    if (!game) throw new Error('GAME NOT FOUND')
+    if (game.state !== 'lobby') throw new Error('GAME ALREADY STARTED')
+
+    const player = await ctx.db.get(args.playerId)
+    if (!player) throw new Error('PLAYER NOT FOUND')
+    if (player.gameId !== args.gameId) throw new Error('PLAYER NOT FOUND')
+
+    await ctx.db.delete(args.playerId)
+    return null
+  },
+})
+
 export const getScores = query({
   args: { gameId: v.id('games') },
   handler: async (ctx, args) => {

@@ -627,6 +627,9 @@ p {
 }
 
 .player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 16px;
   border: 3px solid var(--black);
   box-shadow: var(--shadow-sm);
@@ -636,6 +639,25 @@ p {
   font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.player-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid var(--black);
+  background: var(--pink);
+  color: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.player-chip__remove .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
 }
 
 /* ===== QR SECTION ===== */

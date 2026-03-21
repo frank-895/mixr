@@ -8,10 +8,12 @@ export function JoinScreen({
   gameId,
   gameState,
   onJoined,
+  message,
 }: {
   gameId: Id<'games'>
   gameState: string
   onJoined: (id: Id<'players'>) => void
+  message?: string
 }) {
   const joinGame = useMutation(api.players.join)
   const [name, setName] = useState('')
@@ -50,6 +52,20 @@ export function JoinScreen({
       <div className="text-center mb-8">
         <p className="brand-label">MIXR</p>
       </div>
+
+      {message && (
+        <p
+          style={{
+            color: 'red',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            marginBottom: 16,
+            textAlign: 'center',
+          }}
+        >
+          {message}
+        </p>
+      )}
 
       <div className="form-stack">
         <div>

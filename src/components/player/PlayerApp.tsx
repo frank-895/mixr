@@ -1,4 +1,5 @@
 import { useQuery } from 'convex/react'
+import { useEffect, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import { usePlayerId } from '../../lib/usePlayerId'
@@ -12,6 +13,15 @@ import { WaitingScreen } from './WaitingScreen'
 export function PlayerApp({ gameCode }: { gameCode: string }) {
   const game = useQuery(api.games.getByCode, { code: gameCode })
   const [playerId, setPlayerId] = usePlayerId(gameCode)
+  const [kickedMessage, setKickedMessage] = useState<string | null>(null)
+  const player = useQuery(api.players.get, playerId ? { playerId } : 'skip')
+
+  useEffect(() => {
+    if (!playerId || player !== null) return
+
+    setPlayerId(null)
+    setKickedMessage('YOU WERE REMOVED BY THE HOST')
+  }, [player, playerId, setPlayerId])
 
   if (game === undefined) {
     return <div className="screen center">Loading...</div>
@@ -26,9 +36,17 @@ export function PlayerApp({ gameCode }: { gameCode: string }) {
       <JoinScreen
         gameId={game._id}
         gameState={game.state}
-        onJoined={setPlayerId}
+        message={kickedMessage ?? undefined}
+        onJoined={(id) => {
+          setKickedMessage(null)
+          setPlayerId(id)
+        }}
       />
     )
+  }
+
+  if (player === undefined) {
+    return <div className="screen center">Loading...</div>
   }
 
   if (game.state === 'lobby') {
