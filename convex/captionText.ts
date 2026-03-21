@@ -1,7 +1,3 @@
-export function normalizeCaptionText(text: string): string {
-  return text.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) {
     return 0

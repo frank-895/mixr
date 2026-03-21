@@ -2,6 +2,7 @@ import { useMutation } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { useActionFeedback } from '../../lib/useActionFeedback'
 
 export function JoinScreen({
   gameId,
@@ -15,8 +16,8 @@ export function JoinScreen({
   const joinGame = useMutation(api.players.join)
   const [name, setName] = useState('')
   const [joining, setJoining] = useState(false)
-  const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const { error, isRejected, clearError, reject } = useActionFeedback()
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -34,12 +35,12 @@ export function JoinScreen({
   const handleJoin = async () => {
     if (!name.trim()) return
     setJoining(true)
-    setError('')
+    clearError()
     try {
       const playerId = await joinGame({ gameId, name: name.trim() })
       onJoined(playerId)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to join')
+      reject(e, 'TRY ANOTHER NAME')
       setJoining(false)
     }
   }
@@ -58,11 +59,14 @@ export function JoinScreen({
           <input
             ref={inputRef}
             id="playerName"
-            className="brutal-input"
+            className={`brutal-input ${isRejected ? 'ui-rejected' : ''}`}
             type="text"
             placeholder="PLAYER NAME"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value.toUpperCase())
+              clearError()
+            }}
             onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
             maxLength={20}
             autoComplete="off"

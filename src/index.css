@@ -132,6 +132,10 @@ p {
   background-color: rgba(249, 228, 6, 0.1);
 }
 
+.ui-rejected {
+  animation: ui-rejected-buzz 0.42s ease-in-out;
+}
+
 .brutal-textarea {
   width: 100%;
   height: 120px;
@@ -159,6 +163,25 @@ p {
   box-shadow: var(--shadow-focus);
   transform: translate(-2px, -2px);
   background-color: rgba(249, 228, 6, 0.1);
+}
+
+@keyframes ui-rejected-buzz {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 /* ===== BRAND LABEL ===== */

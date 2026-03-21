@@ -2,6 +2,7 @@ import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
 import { mutation, type QueryCtx, query } from './_generated/server'
+import { VOTE_COOLDOWN_MS } from './input'
 
 function pickCaptionToShow(members: Doc<'captions'>[]): Doc<'captions'> | null {
   if (members.length === 0) return null
@@ -47,6 +48,18 @@ async function getVotedSemanticKeys(
   return new Set(playerVotes.map((vote) => vote.semanticKeyCaptionId))
 }
 
+async function isPlayerInRoundGame(
+  ctx: QueryCtx,
+  args: { playerId: Id<'players'>; roundId: Id<'rounds'> }
+): Promise<boolean> {
+  const [player, round] = await Promise.all([
+    ctx.db.get(args.playerId),
+    ctx.db.get(args.roundId),
+  ])
+
+  return Boolean(player && round && player.gameId === round.gameId)
+}
+
 export const getCandidates = query({
   args: {
     playerId: v.id('players'),
@@ -57,6 +70,10 @@ export const getCandidates = query({
     ctx,
     args
   ): Promise<Array<{ captionId: Id<'captions'>; text: string }>> => {
+    if (!(await isPlayerInRoundGame(ctx, args))) {
+      return []
+    }
+
     const round = await ctx.db.get(args.roundId)
     if (!round) return []
 
@@ -88,13 +105,34 @@ export const castVote = mutation({
   },
   handler: async (ctx, args) => {
     const caption = await ctx.db.get(args.captionId)
-    if (!caption) throw new Error('Caption not found')
+    if (!caption) throw new Error('VOTE REJECTED')
     const semanticKeyCaptionId = caption.semanticKeyCaptionId ?? caption._id
 
+    const player = await ctx.db.get(args.playerId)
+    if (!player) throw new Error('VOTE REJECTED')
+
     const round = await ctx.db.get(caption.roundId)
-    if (!round) throw new Error('Round not found')
-    if (round.state !== 'open') throw new Error('Not in voting phase')
-    if (Date.now() > round.voteEndsAt) throw new Error('Vote phase ended')
+    if (!round) throw new Error('VOTE REJECTED')
+    if (player.gameId !== round.gameId) {
+      throw new Error('VOTE REJECTED')
+    }
+    if (round.state !== 'open') throw new Error('VOTING IS CLOSED')
+    if (Date.now() > round.voteEndsAt) throw new Error('VOTING IS CLOSED')
+
+    const latestVote = await ctx.db
+      .query('votes')
+      .withIndex('by_userId_and_roundId', (q) =>
+        q.eq('userId', args.playerId).eq('roundId', caption.roundId)
+      )
+      .order('desc')
+      .take(1)
+
+    if (
+      latestVote[0] &&
+      Date.now() - latestVote[0]._creationTime < VOTE_COOLDOWN_MS
+    ) {
+      throw new Error('ONE AT A TIME')
+    }
 
     const existing = await ctx.db
       .query('votes')

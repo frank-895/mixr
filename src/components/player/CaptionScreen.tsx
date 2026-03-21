@@ -1,8 +1,9 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
-import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
+import { MAX_CAPTION_LENGTH } from '../../../convex/input'
+import { useActionFeedback } from '../../lib/useActionFeedback'
 import { useCountdown } from '../../lib/useCountdown'
 
 const COOLDOWN_SECONDS = 5
@@ -30,7 +31,7 @@ export function CaptionScreen({
   const [cooldownEnd, setCooldownEnd] = useState(0)
   const [cooldownLeft, setCooldownLeft] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { trigger } = useWebHaptics()
+  const { error, isRejected, clearError, reject } = useActionFeedback()
 
   useEffect(() => {
     textareaRef.current?.focus()
@@ -56,6 +57,7 @@ export function CaptionScreen({
   const handleSubmit = async () => {
     if (!text.trim() || submitting || cooldownLeft > 0) return
     setSubmitting(true)
+    clearError()
     try {
       await submitCaption({
         playerId,
@@ -65,9 +67,8 @@ export function CaptionScreen({
       setText('')
       setCooldownEnd(Date.now() + COOLDOWN_SECONDS * 1000)
       setCooldownLeft(COOLDOWN_SECONDS)
-      trigger([{ duration: 20 }, { delay: 40, duration: 30, intensity: 1 }])
-    } catch {
-      // Submission may have failed due to cooldown or phase end
+    } catch (e) {
+      reject(e, 'CAPTION REJECTED')
     } finally {
       setSubmitting(false)
     }
@@ -114,22 +115,40 @@ export function CaptionScreen({
           <textarea
             ref={textareaRef}
             id="caption"
-            className="brutal-textarea"
+            className={`brutal-textarea ${isRejected ? 'ui-rejected' : ''}`}
             placeholder="MAKE IT FUNNY..."
             value={text}
-            onChange={(e) => setText(e.target.value.slice(0, 140))}
+            onChange={(e) => {
+              setText(e.target.value.slice(0, MAX_CAPTION_LENGTH))
+              clearError()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
                 handleSubmit()
               }
             }}
-            maxLength={140}
+            maxLength={MAX_CAPTION_LENGTH}
           />
           <div className="char-counter">
-            <span>{text.length}</span>/140
+            <span>{text.length}</span>/{MAX_CAPTION_LENGTH}
           </div>
         </div>
+
+        {error && (
+          <p
+            style={{
+              color: '#ef4444',
+              margin: 0,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+            }}
+          >
+            {error}
+          </p>
+        )}
 
         {/* Submitted Captions */}
         {sortedCaptions.length > 0 && (

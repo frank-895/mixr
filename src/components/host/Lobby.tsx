@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
+import { useActionFeedback } from '../../lib/useActionFeedback'
 
 export function Lobby({
   game,
@@ -11,12 +12,22 @@ export function Lobby({
 }) {
   const players = useQuery(api.players.listByGame, { gameId: game._id })
   const startGame = useMutation(api.games.startGame)
+  const { error, isRejected, clearError, reject } = useActionFeedback()
 
   const joinUrl = `${window.location.origin}?code=${gameCode}`
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}`
 
   const playerCount = players?.length ?? 0
-  const canStart = playerCount >= 2
+  const canStart = playerCount >= 3
+
+  const handleStart = async () => {
+    clearError()
+    try {
+      await startGame({ gameId: game._id })
+    } catch (e) {
+      reject(e, "CAN'T START YET")
+    }
+  }
 
   return (
     <div className="host-shell">
@@ -76,8 +87,8 @@ export function Lobby({
         <div className="lobby__actions">
           <button
             type="button"
-            className="brutal-btn brutal-btn--green"
-            onClick={() => startGame({ gameId: game._id })}
+            className={`brutal-btn brutal-btn--green ${isRejected ? 'ui-rejected' : ''}`}
+            onClick={handleStart}
             disabled={!canStart}
           >
             <span>START GAME</span>
@@ -88,9 +99,11 @@ export function Lobby({
 
           {!canStart && (
             <p className="lobby__hint">
-              You'll need at least 2 players to start
+              You'll need at least 3 players to start
             </p>
           )}
+
+          {error && <p className="lobby__hint">{error}</p>}
         </div>
       </main>
     </div>

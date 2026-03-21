@@ -1,6 +1,11 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { mutation, query } from './_generated/server'
+import {
+  isValidGameCode,
+  MIN_PLAYERS_TO_START,
+  normalizeGameCode,
+} from './input'
 import { MEME_IMAGES } from './seed'
 
 export const skipPhase = mutation({
@@ -77,9 +82,11 @@ export const createGame = mutation({
 export const getByCode = query({
   args: { code: v.string() },
   handler: async (ctx, args) => {
+    if (!isValidGameCode(args.code)) return null
+
     return await ctx.db
       .query('games')
-      .withIndex('by_code', (q) => q.eq('code', args.code.toUpperCase()))
+      .withIndex('by_code', (q) => q.eq('code', normalizeGameCode(args.code)))
       .unique()
   },
 })
@@ -95,8 +102,17 @@ export const startGame = mutation({
   args: { gameId: v.id('games') },
   handler: async (ctx, args) => {
     const game = await ctx.db.get(args.gameId)
-    if (!game) throw new Error('Game not found')
-    if (game.state !== 'lobby') throw new Error('Game already started')
+    if (!game) throw new Error('GAME NOT FOUND')
+    if (game.state !== 'lobby') throw new Error('GAME ALREADY STARTED')
+
+    const players = await ctx.db
+      .query('players')
+      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
+      .take(MIN_PLAYERS_TO_START)
+
+    if (players.length < MIN_PLAYERS_TO_START) {
+      throw new Error(`NEED ${MIN_PLAYERS_TO_START} PLAYERS TO START`)
+    }
 
     await ctx.db.patch(args.gameId, { state: 'playing' })
 

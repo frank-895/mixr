@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from 'convex/react'
-import { useWebHaptics } from 'web-haptics/react'
+import { useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
+import { useActionFeedback } from '../../lib/useActionFeedback'
 import { useCountdown } from '../../lib/useCountdown'
 
 export function VoteScreen({
@@ -20,26 +21,24 @@ export function VoteScreen({
   })
   const castVote = useMutation(api.votes.castVote)
   const seconds = useCountdown(round.voteEndsAt)
-
-  const { trigger } = useWebHaptics()
+  const [submitting, setSubmitting] = useState(false)
+  const { error, isRejected, clearError, reject } = useActionFeedback()
   const current = candidates?.[0]
 
   const handleVote = async (value: boolean) => {
-    if (!current) return
-    // Fire haptics immediately for responsiveness
-    if (value) {
-      trigger([{ duration: 30 }, { delay: 60, duration: 40, intensity: 1 }])
-    } else {
-      trigger([{ duration: 15, intensity: 0.5 }])
-    }
+    if (!current || submitting) return
+    setSubmitting(true)
+    clearError()
     try {
       await castVote({
         playerId,
         captionId: current.captionId,
         value,
       })
-    } catch {
-      // Vote may have already been cast or phase ended
+    } catch (e) {
+      reject(e, 'VOTE REJECTED')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -93,12 +92,13 @@ export function VoteScreen({
           </div>
 
           {/* Vote Buttons */}
-          <div className="vote-buttons">
+          <div className={`vote-buttons ${isRejected ? 'ui-rejected' : ''}`}>
             <button
               type="button"
               className="vote-btn vote-btn--reject"
               onClick={() => handleVote(false)}
               aria-label="Reject"
+              disabled={submitting}
             >
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -107,6 +107,7 @@ export function VoteScreen({
               className="vote-btn vote-btn--approve"
               onClick={() => handleVote(true)}
               aria-label="Approve"
+              disabled={submitting}
             >
               <span
                 className="material-symbols-outlined"
@@ -116,6 +117,20 @@ export function VoteScreen({
               </span>
             </button>
           </div>
+
+          {error && (
+            <p
+              style={{
+                marginTop: 12,
+                color: '#ef4444',
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+              }}
+            >
+              {error}
+            </p>
+          )}
         </>
       ) : (
         <div

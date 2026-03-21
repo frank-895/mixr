@@ -12,7 +12,9 @@ export default defineSchema({
   players: defineTable({
     gameId: v.id('games'),
     name: v.string(),
-  }).index('by_gameId', ['gameId']),
+  })
+    .index('by_gameId', ['gameId'])
+    .index('by_gameId_and_name', ['gameId', 'name']),
 
   rounds: defineTable({
     gameId: v.id('games'),

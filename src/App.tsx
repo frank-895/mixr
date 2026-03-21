@@ -4,6 +4,7 @@ import { api } from '../convex/_generated/api'
 import { HostApp } from './components/host/HostApp'
 
 import { PlayerApp } from './components/player/PlayerApp'
+import { useActionFeedback } from './lib/useActionFeedback'
 import { useRoute } from './lib/useRoute'
 
 function App() {
@@ -43,24 +44,28 @@ function JoinPage({
 }) {
   const convex = useConvex()
   const [code, setCode] = useState('')
-  const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
+  const { error, isRejected, clearError, reject } = useActionFeedback()
 
   const handleJoin = async () => {
     const trimmed = code.trim().toUpperCase()
     if (!trimmed) return
+    if (trimmed.length !== 4) {
+      reject('ENTER 4 VALID CHARACTERS')
+      return
+    }
 
-    setError('')
+    clearError()
     setChecking(true)
     try {
       const game = await convex.query(api.games.getByCode, { code: trimmed })
       if (game) {
         navigate('/', { code: trimmed })
       } else {
-        setError('GAME NOT FOUND')
+        reject('GAME NOT FOUND')
       }
-    } catch {
-      setError('SOMETHING WENT WRONG')
+    } catch (e) {
+      reject(e, 'TRY A REAL CODE')
     } finally {
       setChecking(false)
     }
@@ -75,15 +80,20 @@ function JoinPage({
       <div className="form-stack">
         <input
           type="text"
-          className="brutal-input"
+          className={`brutal-input ${isRejected ? 'ui-rejected' : ''}`}
           placeholder="ENTER GAME CODE"
           value={code}
           onChange={(e) => {
-            setCode(e.target.value.toUpperCase())
-            setError('')
+            setCode(
+              e.target.value
+                .toUpperCase()
+                .replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, '')
+                .slice(0, 4)
+            )
+            clearError()
           }}
           onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-          maxLength={6}
+          maxLength={4}
           style={{ textAlign: 'center', letterSpacing: 4, fontSize: 24 }}
         />
         {error && (
