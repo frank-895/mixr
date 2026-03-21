@@ -50,18 +50,15 @@ export function RoundScreen({ game }: { game: Doc<'games'> }) {
               : 'ROUND COMPLETE'}
         </div>
         {round.state !== 'finished' && <Timer targetTime={targetTime} />}
-        {round.state !== 'finished' && (
-          <button
-            type="button"
-            className="brutal-btn brutal-btn--pink brutal-btn--small"
-            onClick={() => skipPhase({ gameId: game._id })}
-          >
-            <span>SKIP</span>
-            <span className="material-symbols-outlined" aria-hidden="true">
-              skip_next
-            </span>
-          </button>
-        )}
+        <button
+          type="button"
+          className="brutal-header-btn"
+          style={round.state === 'finished' ? { visibility: 'hidden' } : undefined}
+          onClick={() => skipPhase({ gameId: game._id })}
+          aria-label="Skip to next phase"
+        >
+          <span className="material-symbols-outlined">skip_next</span>
+        </button>
       </header>
 
       {/* Main Layout */}
