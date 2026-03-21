@@ -1,5 +1,7 @@
 import { v } from 'convex/values'
+import { internal } from './_generated/api'
 import { mutation, query } from './_generated/server'
+import { normalizeCaptionText } from './captionText'
 
 const COOLDOWN_MS = 5_000
 
@@ -24,8 +26,8 @@ export const submit = mutation({
       throw new Error('Not in a captioning phase')
     }
 
-    const trimmed = args.text.trim()
-    if (!trimmed) throw new Error('Caption cannot be empty')
+    const normalized = normalizeCaptionText(args.text)
+    if (!normalized) throw new Error('Caption cannot be empty')
 
     // Enforce 5s cooldown between submissions
     const playerCaptions = await ctx.db
@@ -37,31 +39,44 @@ export const submit = mutation({
 
     if (playerCaptions.length > 0) {
       const latest = playerCaptions.reduce((a, b) =>
-        a.createdAt > b.createdAt ? a : b
+        (a.createdAt ?? a._creationTime) > (b.createdAt ?? b._creationTime)
+          ? a
+          : b
       )
-      if (now - latest.createdAt < COOLDOWN_MS) {
+      if (now - (latest.createdAt ?? latest._creationTime) < COOLDOWN_MS) {
         throw new Error('Please wait before submitting another caption')
       }
     }
 
-    return await ctx.db.insert('captions', {
+    const captionId = await ctx.db.insert('captions', {
       userId: args.playerId,
       roundId: args.roundId,
-      text: trimmed,
+      text: normalized,
       score: 0,
       exposureCount: 0,
       createdAt: now,
+      dedupeStatus: 'pending',
     })
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.internal.captionEmbedding.processCaption,
+      { captionId }
+    )
+
+    return captionId
   },
 })
 
 export const listByRound = query({
   args: { roundId: v.id('rounds') },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const captions = await ctx.db
       .query('captions')
       .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
       .take(200)
+
+    return captions
   },
 })
 

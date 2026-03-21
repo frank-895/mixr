@@ -343,30 +343,6 @@ p {
   text-align: center;
 }
 
-/* ===== PROGRESS BAR ===== */
-
-.progress-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  background: var(--white);
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.progress-label {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .progress-timer {
   font-family: var(--font-body);
   font-size: 12px;
@@ -375,20 +351,6 @@ p {
   color: var(--white);
   padding: 4px 8px;
   border: 2px solid var(--black);
-}
-
-.progress-bar {
-  height: 16px;
-  border: 2px solid var(--black);
-  background: var(--muted);
-  width: 100%;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: var(--green);
-  border-right: 2px solid var(--black);
-  transition: width 0.3s ease;
 }
 
 /* ===== VOTE BUTTONS (Circle) ===== */

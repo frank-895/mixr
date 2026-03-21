@@ -8,8 +8,11 @@
  * @module
  */
 
+import type * as captionText from "../captionText.js";
 import type * as captions from "../captions.js";
 import type * as games from "../games.js";
+import type * as internal_captionDedupe from "../internal/captionDedupe.js";
+import type * as internal_captionEmbedding from "../internal/captionEmbedding.js";
 import type * as internal_roundTransitions from "../internal/roundTransitions.js";
 import type * as players from "../players.js";
 import type * as rounds from "../rounds.js";
@@ -23,8 +26,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  captionText: typeof captionText;
   captions: typeof captions;
   games: typeof games;
+  "internal/captionDedupe": typeof internal_captionDedupe;
+  "internal/captionEmbedding": typeof internal_captionEmbedding;
   "internal/roundTransitions": typeof internal_roundTransitions;
   players: typeof players;
   rounds: typeof rounds;
