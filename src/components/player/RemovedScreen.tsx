@@ -14,7 +14,7 @@ export function RemovedScreen() {
           background: 'var(--white)',
         }}
       >
-        <p className="brand-label">MIXR</p>
+        <img src="/MIXR_logo.jpg" alt="MIXR" className="brand-logo" />
 
         <div
           style={{

@@ -45,7 +45,11 @@ export function Lobby({
         className="brutal-header"
         style={{ justifyContent: 'center', gap: 12 }}
       >
-        <span className="brand-label brand-label--inline">MIXR</span>
+        <img
+          src="/MIXR_logo.jpg"
+          alt="MIXR"
+          className="brand-logo brand-logo--inline"
+        />
       </header>
 
       <main className="lobby">

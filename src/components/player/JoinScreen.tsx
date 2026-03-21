@@ -29,7 +29,7 @@ export function JoinScreen({
   if (gameState !== 'lobby') {
     return (
       <main className="screen center">
-        <p className="brand-label">MIXR</p>
+        <img src="/MIXR_logo.jpg" alt="MIXR" className="brand-logo" />
         <p>THIS GAME HAS ALREADY STARTED.</p>
       </main>
     )
@@ -51,7 +51,7 @@ export function JoinScreen({
   return (
     <main className="screen center">
       <div className="text-center mb-8">
-        <p className="brand-label">MIXR</p>
+        <img src="/MIXR_logo.jpg" alt="MIXR" className="brand-logo" />
       </div>
 
       {message && (

@@ -74,7 +74,7 @@ function JoinPage({
   return (
     <main className="screen center">
       <div className="text-center mb-8">
-        <p className="brand-label">MIXR</p>
+        <img src="/MIXR_logo.jpg" alt="MIXR" className="brand-logo" />
       </div>
 
       <div className="form-stack">
@@ -167,7 +167,7 @@ function HostLanding({
   return (
     <main className="screen center">
       <div className="text-center mb-8">
-        <p className="brand-label">MIXR</p>
+        <img src="/MIXR_logo.jpg" alt="MIXR" className="brand-logo" />
       </div>
 
       <div className="form-stack">

@@ -191,23 +191,16 @@ p {
   }
 }
 
-/* ===== BRAND LABEL ===== */
+/* ===== BRAND LOGO ===== */
 
-.brand-label {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  background: var(--black);
-  color: var(--primary);
-  padding: 4px 10px;
+.brand-logo {
+  height: 160px;
   display: inline-block;
+  object-fit: contain;
 }
 
-.brand-label--inline {
-  font-size: 12px;
-  padding: 2px 8px;
+.brand-logo--inline {
+  height: 48px;
 }
 
 /* ===== BRUTAL BUTTONS ===== */
