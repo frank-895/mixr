@@ -14,6 +14,7 @@ import type * as games from "../games.js";
 import type * as input from "../input.js";
 import type * as internal_captionDedupe from "../internal/captionDedupe.js";
 import type * as internal_captionEmbedding from "../internal/captionEmbedding.js";
+import type * as internal_gameCleanup from "../internal/gameCleanup.js";
 import type * as internal_roundTransitions from "../internal/roundTransitions.js";
 import type * as players from "../players.js";
 import type * as rounds from "../rounds.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   input: typeof input;
   "internal/captionDedupe": typeof internal_captionDedupe;
   "internal/captionEmbedding": typeof internal_captionEmbedding;
+  "internal/gameCleanup": typeof internal_gameCleanup;
   "internal/roundTransitions": typeof internal_roundTransitions;
   players: typeof players;
   rounds: typeof rounds;

@@ -23,11 +23,21 @@ export const skipPhase = mutation({
     if (!round) return
 
     if (round.state === 'caption') {
+      if (round.scheduledEndCaptionJobId) {
+        await ctx.scheduler.cancel(round.scheduledEndCaptionJobId)
+        await ctx.db.patch(round._id, { scheduledEndCaptionJobId: undefined })
+      }
+
       await ctx.runMutation(
         internal.internal.roundTransitions.endCaptionPhase,
         { roundId: round._id }
       )
     } else if (round.state === 'open') {
+      if (round.scheduledEndOpenJobId) {
+        await ctx.scheduler.cancel(round.scheduledEndOpenJobId)
+        await ctx.db.patch(round._id, { scheduledEndOpenJobId: undefined })
+      }
+
       await ctx.runMutation(internal.internal.roundTransitions.endOpenPhase, {
         roundId: round._id,
       })
@@ -128,10 +138,14 @@ export const startGame = mutation({
       voteEndsAt: 0,
     })
 
-    await ctx.scheduler.runAfter(
+    const scheduledEndCaptionJobId = await ctx.scheduler.runAfter(
       30_000,
       internal.internal.roundTransitions.endCaptionPhase,
       { roundId }
     )
+
+    await ctx.db.patch(roundId, {
+      scheduledEndCaptionJobId,
+    })
   },
 })

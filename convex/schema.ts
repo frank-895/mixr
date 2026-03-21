@@ -7,6 +7,7 @@ export default defineSchema({
     state: v.string(),
     totalRounds: v.number(),
     currentRound: v.number(),
+    finishedAt: v.optional(v.number()),
   }).index('by_code', ['code']),
 
   players: defineTable({
@@ -23,6 +24,8 @@ export default defineSchema({
     state: v.string(),
     captionEndsAt: v.number(),
     voteEndsAt: v.number(),
+    scheduledEndCaptionJobId: v.optional(v.id('_scheduled_functions')),
+    scheduledEndOpenJobId: v.optional(v.id('_scheduled_functions')),
   }).index('by_gameId_and_roundNumber', ['gameId', 'roundNumber']),
 
   captions: defineTable({
