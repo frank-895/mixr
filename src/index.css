@@ -472,6 +472,15 @@ p {
   background: rgba(249, 228, 6, 0.3);
 }
 
+.leaderboard-row.first-place.first-place {
+  background: var(--primary);
+  font-weight: 800;
+}
+
+.leaderboard-row.first-place .leaderboard-rank {
+  font-size: 24px;
+}
+
 .leaderboard-left {
   display: flex;
   align-items: center;
