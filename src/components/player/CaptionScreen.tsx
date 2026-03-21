@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
+import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import { MAX_CAPTION_LENGTH } from '../../../convex/input'
@@ -32,6 +33,7 @@ export function CaptionScreen({
   const [cooldownLeft, setCooldownLeft] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { error, isRejected, clearError, reject } = useActionFeedback()
+  const { trigger } = useWebHaptics()
 
   useEffect(() => {
     textareaRef.current?.focus()
@@ -67,6 +69,7 @@ export function CaptionScreen({
       setText('')
       setCooldownEnd(Date.now() + COOLDOWN_SECONDS * 1000)
       setCooldownLeft(COOLDOWN_SECONDS)
+      trigger([{ duration: 20 }, { delay: 40, duration: 30, intensity: 1 }])
     } catch (e) {
       reject(e, 'CAPTION REJECTED')
     } finally {

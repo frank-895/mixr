@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
+import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import { useActionFeedback } from '../../lib/useActionFeedback'
@@ -23,10 +24,17 @@ export function VoteScreen({
   const seconds = useCountdown(round.voteEndsAt)
   const [submitting, setSubmitting] = useState(false)
   const { error, isRejected, clearError, reject } = useActionFeedback()
+  const { trigger } = useWebHaptics()
   const current = candidates?.[0]
 
   const handleVote = async (value: boolean) => {
     if (!current || submitting) return
+    // Fire haptics immediately for responsiveness
+    if (value) {
+      trigger([{ duration: 30 }, { delay: 60, duration: 40, intensity: 1 }])
+    } else {
+      trigger([{ duration: 15, intensity: 0.5 }])
+    }
     setSubmitting(true)
     clearError()
     try {
