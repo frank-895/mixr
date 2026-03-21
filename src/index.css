@@ -734,8 +734,8 @@ p {
 
 .char-counter {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  bottom: 14px;
+  right: 10px;
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
