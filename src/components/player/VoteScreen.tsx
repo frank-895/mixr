@@ -184,72 +184,74 @@ export function VoteScreen({
   const formatted = String(seconds).padStart(2, '0')
 
   return (
-    <main
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        position: 'relative',
-      }}
-    >
-      <div
-        className="progress-timer"
-        style={{ position: 'absolute', top: 16, right: 16 }}
-      >
-        {formatted}s
-      </div>
-
-      <AnimatePresence mode="popLayout">
-        {current ? (
-          <motion.div
-            key={current.captionId}
-            style={{ width: '100%', marginBottom: 24 }}
-            layout
-          >
-            {/* Swipeable Meme Card */}
-            <SwipeableCard
-              candidate={current}
-              imageUrl={round.imageUrl}
-              onVote={handleVote}
-              disabled={submitting}
-            />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      {current ? (
-        error && (
-          <p
-            style={{
-              marginTop: 12,
-              color: '#ef4444',
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-            }}
-          >
-            {error}
-          </p>
-        )
-      ) : (
-        <div
-          className="brutal-card"
-          style={{ padding: 32, textAlign: 'center' }}
-        >
-          <span
-            className="material-symbols-outlined animate-spin"
-            aria-hidden="true"
-            style={{ fontSize: 48, marginBottom: 16, display: 'block' }}
-          >
-            hourglass_empty
-          </span>
-          <h2>NO MORE MEMES</h2>
-          <p style={{ marginTop: 8 }}>WAITING FOR NEW CAPTIONS...</p>
+    <>
+      {/* Header */}
+      <header className="brutal-header">
+        <div style={{ width: 48 }} />
+        <div className="timer-badge">
+          <span>{formatted}s</span>
         </div>
-      )}
-    </main>
+      </header>
+
+      <main
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}
+      >
+        <AnimatePresence mode="popLayout">
+          {current ? (
+            <motion.div
+              key={current.captionId}
+              style={{ width: '100%', marginBottom: 24 }}
+              layout
+            >
+              {/* Swipeable Meme Card */}
+              <SwipeableCard
+                candidate={current}
+                imageUrl={round.imageUrl}
+                onVote={handleVote}
+                disabled={submitting}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        {current ? (
+          error && (
+            <p
+              style={{
+                marginTop: 12,
+                color: '#ef4444',
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+              }}
+            >
+              {error}
+            </p>
+          )
+        ) : (
+          <div
+            className="brutal-card"
+            style={{ padding: 32, textAlign: 'center' }}
+          >
+            <span
+              className="material-symbols-outlined animate-spin"
+              aria-hidden="true"
+              style={{ fontSize: 48, marginBottom: 16, display: 'block' }}
+            >
+              hourglass_empty
+            </span>
+            <h2>NO MORE MEMES</h2>
+            <p style={{ marginTop: 8 }}>WAITING FOR NEW CAPTIONS...</p>
+          </div>
+        )}
+      </main>
+    </>
   )
 }

@@ -477,10 +477,6 @@ p {
   font-weight: 800;
 }
 
-.leaderboard-row.first-place .leaderboard-rank {
-  font-size: 24px;
-}
-
 .leaderboard-left {
   display: flex;
   align-items: center;
@@ -492,6 +488,10 @@ p {
   font-size: 20px;
   width: 24px;
   text-align: center;
+}
+
+.leaderboard-row.first-place .leaderboard-rank {
+  font-size: 24px;
 }
 
 .leaderboard-name {
