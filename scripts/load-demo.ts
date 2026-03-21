@@ -4,6 +4,7 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../convex/_generated/api.js'
 
 export type LoadDemoConfig = {
+  convexUrl: string
   gameCode: string
   botCount: number
   waitForHumanPlayer: boolean
@@ -220,6 +221,7 @@ async function parseConfig(): Promise<LoadDemoConfig> {
   const botCountValue = parsed.values.botCount ?? parsed.values.playerCount
 
   const config: LoadDemoConfig = {
+    convexUrl,
     gameCode,
     botCount: toNumber(botCountValue, 100, 'botCount'),
     waitForHumanPlayer: toBoolean(parsed.values.waitForHumanPlayer, false),
@@ -282,13 +284,17 @@ function botNameFor(index: number, attempt = 0): string {
   return `${BOT_NAME_PREFIX}${String(index + 1).padStart(BOT_NAME_PAD, '0')}${suffix}`
 }
 
+function pickWord(words: string[], hash: number): string {
+  return words[hash % words.length] ?? words[0] ?? ''
+}
+
 function buildCaptionText(botIndex: number, roundNumber: number): string {
   const salt = stableHash(
     `${botIndex}:${roundNumber}:${Date.now()}:${Math.random()}`
   )
-  const subject = SUBJECTS[salt % SUBJECTS.length]
-  const verb = VERBS[(salt >> 4) % VERBS.length]
-  const ending = ENDINGS[(salt >> 8) % ENDINGS.length]
+  const subject = pickWord(SUBJECTS, salt)
+  const verb = pickWord(VERBS, salt >>> 4)
+  const ending = pickWord(ENDINGS, salt >>> 8)
   return `${subject} ${verb} ${ending}`.slice(0, 60)
 }
 
