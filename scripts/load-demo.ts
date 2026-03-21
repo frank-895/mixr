@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../convex/_generated/api.js'
-import { MAX_PLAYER_NAME_LENGTH } from '../convex/constants.js'
+import { MAX_PLAYER_NAME_LENGTH } from '../convex/constants.ts'
 
 export type LoadDemoConfig = {
   convexUrl: string
