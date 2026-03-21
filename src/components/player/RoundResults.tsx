@@ -37,9 +37,18 @@ export function RoundResults({
               fontWeight: 700,
               textTransform: 'uppercase',
               marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            YOUR CAPTIONS ({results.length}):
+            YOUR CAPTIONS
+            <span
+              className="lobby__player-count"
+              style={{ minWidth: 28, height: 28, fontSize: 14 }}
+            >
+              {results.length}
+            </span>
           </p>
           {results.map(
             (c: { captionId: string; text: string; score: number }) => (

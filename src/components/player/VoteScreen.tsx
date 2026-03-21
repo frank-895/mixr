@@ -147,12 +147,16 @@ function SwipeableCard({
 export function VoteScreen({
   round,
   playerId,
-  game: _game,
+  game,
 }: {
   round: Doc<'rounds'>
   playerId: Id<'players'>
   game: Doc<'games'>
 }) {
+  const myStats = useQuery(api.players.getMyStats, {
+    gameId: game._id,
+    playerId,
+  })
   const snapshot = useQuery(api.votes.getVoteSnapshot, {
     playerId,
     roundId: round._id,
@@ -206,7 +210,24 @@ export function VoteScreen({
     <>
       {/* Header */}
       <header className="brutal-header">
-        <div style={{ width: 48 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            className="badge"
+            style={{
+              padding: '8px 16px',
+              maxWidth: 160,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              background: 'var(--white)',
+            }}
+          >
+            {myStats?.name ?? '...'}
+          </span>
+          <span className="badge badge--primary">
+            {myStats?.totalScore ?? 0}
+          </span>
+        </div>
         <div className="timer-badge">
           <span>{formatted}s</span>
         </div>

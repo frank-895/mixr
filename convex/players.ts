@@ -196,6 +196,23 @@ export const remove = mutation({
   },
 })
 
+export const getMyStats = query({
+  args: { gameId: v.id('games'), playerId: v.id('players') },
+  handler: async (ctx, args) => {
+    const player = await ctx.db.get(args.playerId)
+    const stats = await ctx.db
+      .query('playerGameStats')
+      .withIndex('by_gameId_and_playerId', (q) =>
+        q.eq('gameId', args.gameId).eq('playerId', args.playerId)
+      )
+      .unique()
+    return {
+      name: player?.name ?? '???',
+      totalScore: stats?.totalScore ?? 0,
+    }
+  },
+})
+
 export const getScores = query({
   args: { gameId: v.id('games') },
   handler: async (ctx, args) => {

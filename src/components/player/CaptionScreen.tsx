@@ -1,4 +1,4 @@
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
@@ -12,7 +12,7 @@ const COOLDOWN_SECONDS = 5
 export function CaptionScreen({
   round,
   playerId,
-  game: _game,
+  game,
   deadline,
 }: {
   round: Doc<'rounds'>
@@ -20,6 +20,10 @@ export function CaptionScreen({
   game: Doc<'games'>
   deadline?: number
 }) {
+  const myStats = useQuery(api.players.getMyStats, {
+    gameId: game._id,
+    playerId,
+  })
   const submitCaption = useMutation(api.captions.submit)
   const timerTarget = deadline ?? round.captionEndsAt
   const seconds = useCountdown(timerTarget)
@@ -83,7 +87,24 @@ export function CaptionScreen({
     <>
       {/* Header */}
       <header className="brutal-header">
-        <div style={{ width: 48 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            className="badge"
+            style={{
+              padding: '8px 16px',
+              maxWidth: 160,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              background: 'var(--white)',
+            }}
+          >
+            {myStats?.name ?? '...'}
+          </span>
+          <span className="badge badge--primary">
+            {myStats?.totalScore ?? 0}
+          </span>
+        </div>
         <div className="timer-badge">
           <span>{formatted}s</span>
         </div>
