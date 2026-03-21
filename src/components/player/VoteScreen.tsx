@@ -60,7 +60,7 @@ function SwipeableCard({
       drag="x"
       dragElastic={0.9}
       onDragEnd={handleDragEnd}
-      style={{ x, rotate, cursor: 'grab', touchAction: 'pan-y' }}
+      style={{ x, rotate, cursor: 'grab', touchAction: 'none' }}
       initial={{ scale: 0.95, opacity: 0, y: 30 }}
       animate={{ scale: 1, opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
@@ -201,6 +201,8 @@ export function VoteScreen({
           alignItems: 'center',
           justifyContent: 'center',
           padding: 16,
+          overflow: 'hidden',
+          touchAction: 'none',
         }}
       >
         <AnimatePresence mode="popLayout">
