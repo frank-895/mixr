@@ -88,7 +88,9 @@ export function Lobby({
           </button>
 
           {!canStart && (
-            <p className="lobby__hint">You'll need at least 2 players to start</p>
+            <p className="lobby__hint">
+              You'll need at least 2 players to start
+            </p>
           )}
         </div>
       </main>
