@@ -54,6 +54,8 @@ type BotPlayer = {
   index: number
   name: string
   playerId: Player['_id']
+  captionIntervalMs: number
+  voteIntervalMs: number
 }
 type RuntimeStatus = {
   phase: string
@@ -89,7 +91,6 @@ const POLL_INTERVAL_MS = 750
 const DASHBOARD_INTERVAL_MS = 1000
 const CAPTION_SUBMISSION_GUARD_MS = 1500
 const VOTE_SUBMISSION_GUARD_MS = 1000
-const MIN_VOTE_ACTION_DELAY_MS = 75
 
 const SUBJECTS = [
   'meetings',
@@ -223,9 +224,9 @@ async function parseConfig(): Promise<LoadDemoConfig> {
   const config: LoadDemoConfig = {
     convexUrl,
     gameCode,
-    botCount: toNumber(botCountValue, 100, 'botCount'),
+    botCount: toNumber(botCountValue, 200, 'botCount'),
     waitForHumanPlayer: toBoolean(parsed.values.waitForHumanPlayer, false),
-    joinJitterMs: toNumber(parsed.values.joinJitterMs, 15000, 'joinJitterMs'),
+    joinJitterMs: toNumber(parsed.values.joinJitterMs, 30000, 'joinJitterMs'),
     captionJitterMs: toNumber(
       parsed.values.captionJitterMs,
       8000,
@@ -236,8 +237,8 @@ async function parseConfig(): Promise<LoadDemoConfig> {
     summaryPath: parsed.values.summaryPath,
   }
 
-  if (config.botCount < 1 || config.botCount > 100) {
-    throw new Error('botCount must be between 1 and 100')
+  if (config.botCount < 1 || config.botCount > 200) {
+    throw new Error('botCount must be between 1 and 200')
   }
 
   return config
@@ -282,6 +283,53 @@ function stableHash(input: string): number {
 function botNameFor(index: number, attempt = 0): string {
   const suffix = attempt === 0 ? '' : String.fromCharCode(65 + attempt - 1)
   return `${BOT_NAME_PREFIX}${String(index + 1).padStart(BOT_NAME_PAD, '0')}${suffix}`
+}
+
+function intervalFromDistribution(
+  index: number,
+  limitMs: number,
+  distribution: Array<{ weight: number; minMs: number; maxMs: number }>
+): number {
+  const normalizedLimit = Math.max(1000, limitMs)
+  const scaled = distribution.map((bucket) => ({
+    weight: bucket.weight,
+    minMs: Math.min(bucket.minMs, normalizedLimit),
+    maxMs: Math.min(bucket.maxMs, normalizedLimit),
+  }))
+
+  const totalWeight = scaled.reduce((sum, bucket) => sum + bucket.weight, 0)
+  const pick =
+    stableHash(`${index}:${normalizedLimit}:${Math.random()}`) % totalWeight
+
+  let cumulative = 0
+  for (const bucket of scaled) {
+    cumulative += bucket.weight
+    if (pick < cumulative) {
+      return randomInt(bucket.minMs, Math.max(bucket.minMs, bucket.maxMs))
+    }
+  }
+
+  const fallback = scaled.at(-1)
+  if (!fallback) return normalizedLimit
+  return randomInt(fallback.minMs, Math.max(fallback.minMs, fallback.maxMs))
+}
+
+function captionIntervalForBot(index: number, limitMs: number): number {
+  return intervalFromDistribution(index, limitMs, [
+    { weight: 25, minMs: 5000, maxMs: 5000 },
+    { weight: 35, minMs: 6000, maxMs: 8000 },
+    { weight: 25, minMs: 9000, maxMs: 12000 },
+    { weight: 15, minMs: 13000, maxMs: 18000 },
+  ])
+}
+
+function voteIntervalForBot(index: number, limitMs: number): number {
+  return intervalFromDistribution(index, limitMs, [
+    { weight: 20, minMs: 1000, maxMs: 1000 },
+    { weight: 40, minMs: 1200, maxMs: 1800 },
+    { weight: 25, minMs: 2000, maxMs: 3000 },
+    { weight: 15, minMs: 3500, maxMs: 5000 },
+  ])
 }
 
 function pickWord(words: string[], hash: number): string {
@@ -433,7 +481,19 @@ async function joinOneBot(args: {
       args.latencies.joins.push(performance.now() - startedAt)
       args.status.botsJoined += 1
       args.status.lastMessage = `Joined ${name}`
-      return { index: args.botIndex, name, playerId }
+      return {
+        index: args.botIndex,
+        name,
+        playerId,
+        captionIntervalMs: captionIntervalForBot(
+          args.botIndex,
+          args.config.captionJitterMs
+        ),
+        voteIntervalMs: voteIntervalForBot(
+          args.botIndex,
+          args.config.voteJitterMs
+        ),
+      }
     } catch (error) {
       args.latencies.joins.push(performance.now() - startedAt)
       const key = classifyError('join', error)
@@ -533,16 +593,13 @@ async function runCaptionPhase(args: {
 
   await Promise.all(
     args.bots.map(async (bot) => {
-      const captionCount = randomInt(1, 3)
-      for (let i = 0; i < captionCount; i++) {
-        await sleep(randomDelay(args.config.captionJitterMs))
-        if (
-          Date.now() >=
-          args.round.captionEndsAt - CAPTION_SUBMISSION_GUARD_MS
-        ) {
-          return
-        }
+      await sleep(randomDelay(bot.captionIntervalMs))
+      let captionAttempt = 0
 
+      while (
+        Date.now() <
+        args.round.captionEndsAt - CAPTION_SUBMISSION_GUARD_MS
+      ) {
         args.attempts.captions += 1
         const startedAt = performance.now()
 
@@ -552,7 +609,10 @@ async function runCaptionPhase(args: {
             {
               playerId: bot.playerId,
               roundId: args.round._id,
-              text: buildCaptionText(bot.index, args.round.roundNumber + i),
+              text: buildCaptionText(
+                bot.index,
+                args.round.roundNumber * 1000 + captionAttempt
+              ),
             },
             { skipQueue: true }
           )
@@ -564,6 +624,9 @@ async function runCaptionPhase(args: {
           const key = classifyError('caption', error)
           args.errors[key] = (args.errors[key] ?? 0) + 1
         }
+
+        captionAttempt += 1
+        await sleep(bot.captionIntervalMs)
       }
     })
   )
@@ -600,7 +663,7 @@ async function runVotePhase(args: {
 
   await Promise.all(
     args.bots.map(async (bot) => {
-      await sleep(randomDelay(args.config.voteJitterMs))
+      await sleep(randomDelay(bot.voteIntervalMs))
 
       while (Date.now() < args.round.voteEndsAt - VOTE_SUBMISSION_GUARD_MS) {
         const candidate = await chooseCandidate(
@@ -634,11 +697,7 @@ async function runVotePhase(args: {
           if (key === 'vote_closed') return
         }
 
-        const maxDelay = Math.max(
-          MIN_VOTE_ACTION_DELAY_MS,
-          Math.floor(args.config.voteJitterMs / 3)
-        )
-        await sleep(randomInt(MIN_VOTE_ACTION_DELAY_MS, maxDelay))
+        await sleep(bot.voteIntervalMs)
       }
     })
   )
