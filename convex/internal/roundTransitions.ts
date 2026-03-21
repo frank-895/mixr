@@ -1,11 +1,7 @@
 import { v } from 'convex/values'
 import { internal } from '../_generated/api'
 import { internalMutation } from '../_generated/server'
-import {
-  CAPTION_PHASE_DURATION_MS,
-  GAME_RETENTION_MS,
-  VOTE_PHASE_DURATION_MS,
-} from '../constants'
+import { GAME_RETENTION_MS } from '../constants'
 import { MEME_IMAGES } from '../seed'
 
 export const endCaptionPhase = internalMutation({
@@ -18,15 +14,18 @@ export const endCaptionPhase = internalMutation({
       await ctx.scheduler.cancel(round.scheduledEndCaptionJobId)
     }
 
+    const game = await ctx.db.get(round.gameId)
+    if (!game) return
+
     const now = Date.now()
     await ctx.db.patch(args.roundId, {
       state: 'vote',
-      voteEndsAt: now + VOTE_PHASE_DURATION_MS,
+      voteEndsAt: now + game.votePhaseDurationMs,
       scheduledEndCaptionJobId: undefined,
     })
 
     const scheduledEndVoteJobId = await ctx.scheduler.runAfter(
-      VOTE_PHASE_DURATION_MS,
+      game.votePhaseDurationMs,
       internal.internal.roundTransitions.endVotePhase,
       { roundId: args.roundId }
     )
@@ -67,12 +66,12 @@ export const endVotePhase = internalMutation({
         roundNumber: nextRoundNumber,
         imageUrl,
         state: 'caption',
-        captionEndsAt: now + CAPTION_PHASE_DURATION_MS,
+        captionEndsAt: now + game.captionPhaseDurationMs,
         voteEndsAt: 0,
       })
 
       const scheduledEndCaptionJobId = await ctx.scheduler.runAfter(
-        CAPTION_PHASE_DURATION_MS,
+        game.captionPhaseDurationMs,
         internal.internal.roundTransitions.endCaptionPhase,
         { roundId: nextRoundId }
       )

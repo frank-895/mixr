@@ -7,6 +7,8 @@ export default defineSchema({
     state: v.string(),
     totalRounds: v.number(),
     currentRound: v.number(),
+    captionPhaseDurationMs: v.number(),
+    votePhaseDurationMs: v.number(),
     finishedAt: v.optional(v.number()),
   }).index('by_code', ['code']),
 

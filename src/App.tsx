@@ -146,12 +146,18 @@ function HostLanding({
 }) {
   const createGame = useMutation(api.games.createGame)
   const [rounds, setRounds] = useState(3)
+  const [captionSeconds, setCaptionSeconds] = useState(60)
+  const [voteSeconds, setVoteSeconds] = useState(60)
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async () => {
     setCreating(true)
     try {
-      const { code } = await createGame({ totalRounds: rounds })
+      const { code } = await createGame({
+        totalRounds: rounds,
+        captionPhaseDurationMs: captionSeconds * 1000,
+        votePhaseDurationMs: voteSeconds * 1000,
+      })
       navigate('/host', { code })
     } catch {
       setCreating(false)
@@ -166,6 +172,16 @@ function HostLanding({
 
       <div className="form-stack">
         <RoundsPicker value={rounds} onChange={setRounds} />
+        <DurationPicker
+          label="CAPTION TIME"
+          value={captionSeconds}
+          onChange={setCaptionSeconds}
+        />
+        <DurationPicker
+          label="VOTE TIME"
+          value={voteSeconds}
+          onChange={setVoteSeconds}
+        />
       </div>
 
       <button
@@ -239,6 +255,74 @@ function RoundsPicker({
               }}
             >
               {n} {n === 1 ? 'ROUND' : 'ROUNDS'}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120]
+
+function DurationPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: number
+  onChange: (n: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const formatSeconds = (s: number) => `${s}s`
+
+  return (
+    <div className="rounds-picker" ref={ref}>
+      <button
+        type="button"
+        className="rounds-picker__trigger"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+      >
+        <span>
+          {label}: {formatSeconds(value)}
+        </span>
+        <span
+          className={`material-symbols-outlined rounds-picker__chevron ${open ? 'rounds-picker__chevron--open' : ''}`}
+          aria-hidden="true"
+        >
+          expand_more
+        </span>
+      </button>
+      {open && (
+        <div className="rounds-picker__menu" role="listbox">
+          {DURATION_OPTIONS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="option"
+              aria-selected={s === value}
+              className={`rounds-picker__option ${s === value ? 'rounds-picker__option--active' : ''}`}
+              onClick={() => {
+                onChange(s)
+                setOpen(false)
+              }}
+            >
+              {formatSeconds(s)}
             </button>
           ))}
         </div>

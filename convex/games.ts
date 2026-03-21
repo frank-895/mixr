@@ -1,7 +1,10 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { mutation, query } from './_generated/server'
-import { CAPTION_PHASE_DURATION_MS } from './constants'
+import {
+  DEFAULT_CAPTION_PHASE_DURATION_MS,
+  DEFAULT_VOTE_PHASE_DURATION_MS,
+} from './constants'
 import {
   isValidGameCode,
   MIN_PLAYERS_TO_START,
@@ -60,11 +63,20 @@ function generateCode(): string {
 }
 
 export const createGame = mutation({
-  args: { totalRounds: v.number() },
+  args: {
+    totalRounds: v.number(),
+    captionPhaseDurationMs: v.optional(v.number()),
+    votePhaseDurationMs: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     if (args.totalRounds < 1 || args.totalRounds > 10) {
       throw new Error('totalRounds must be between 1 and 10')
     }
+
+    const captionPhaseDurationMs =
+      args.captionPhaseDurationMs ?? DEFAULT_CAPTION_PHASE_DURATION_MS
+    const votePhaseDurationMs =
+      args.votePhaseDurationMs ?? DEFAULT_VOTE_PHASE_DURATION_MS
 
     let code = generateCode()
     let existing = await ctx.db
@@ -84,6 +96,8 @@ export const createGame = mutation({
       state: 'lobby',
       totalRounds: args.totalRounds,
       currentRound: 1,
+      captionPhaseDurationMs,
+      votePhaseDurationMs,
     })
 
     return { gameId, code }
@@ -135,12 +149,12 @@ export const startGame = mutation({
       roundNumber: 1,
       imageUrl,
       state: 'caption',
-      captionEndsAt: now + CAPTION_PHASE_DURATION_MS,
+      captionEndsAt: now + game.captionPhaseDurationMs,
       voteEndsAt: 0,
     })
 
     const scheduledEndCaptionJobId = await ctx.scheduler.runAfter(
-      CAPTION_PHASE_DURATION_MS,
+      game.captionPhaseDurationMs,
       internal.internal.roundTransitions.endCaptionPhase,
       { roundId }
     )
