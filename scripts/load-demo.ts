@@ -47,9 +47,6 @@ type Round = NonNullable<
 type Player = Awaited<
   ReturnType<typeof clientPrototype.query<typeof api.players.listByGame>>
 >[number]
-type VoteCandidate = Awaited<
-  ReturnType<typeof clientPrototype.query<typeof api.votes.getCandidates>>
->[number]
 type BotPlayer = {
   index: number
   name: string
@@ -632,21 +629,6 @@ async function runCaptionPhase(args: {
   )
 }
 
-async function chooseCandidate(
-  client: ConvexHttpClient,
-  roundId: Round['_id'],
-  bot: BotPlayer
-): Promise<VoteCandidate | null> {
-  const candidates = await client.query(api.votes.getCandidates, {
-    playerId: bot.playerId,
-    roundId,
-    count: 5,
-  })
-
-  if (candidates.length === 0) return null
-  return candidates[randomInt(0, candidates.length - 1)] ?? null
-}
-
 async function runVotePhase(args: {
   client: ConvexHttpClient
   round: Round
@@ -664,13 +646,17 @@ async function runVotePhase(args: {
   await Promise.all(
     args.bots.map(async (bot) => {
       await sleep(randomDelay(bot.voteIntervalMs))
+      const candidates = await args.client.query(api.votes.getVoteSnapshot, {
+        playerId: bot.playerId,
+        roundId: args.round._id,
+      })
+      const remainingCandidates = [...candidates]
 
       while (Date.now() < args.round.voteEndsAt - VOTE_SUBMISSION_GUARD_MS) {
-        const candidate = await chooseCandidate(
-          args.client,
-          args.round._id,
-          bot
-        )
+        if (remainingCandidates.length === 0) return
+
+        const candidateIndex = randomInt(0, remainingCandidates.length - 1)
+        const candidate = remainingCandidates.splice(candidateIndex, 1)[0]
         if (!candidate) return
 
         const value = Math.random() >= 0.5

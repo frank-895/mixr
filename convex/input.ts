@@ -1,8 +1,3 @@
-export const MAX_PLAYER_NAME_LENGTH = 20
-export const MAX_CAPTION_LENGTH = 60
-export const MAX_PLAYERS_PER_GAME = 200
-export const MIN_PLAYERS_TO_START = 3
-
 const GAME_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/
 
 function normalizeWhitespace(value: string): string {

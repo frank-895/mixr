@@ -11,13 +11,13 @@ export function RoundResults({
   playerId: Id<'players'>
   game: { currentRound: number; totalRounds: number }
 }) {
-  const captions = useQuery(api.captions.getPlayerCaptions, {
+  const results = useQuery(api.captions.getPlayerRoundResults, {
     playerId,
     roundId: round._id,
   })
 
-  const totalScore = (captions ?? []).reduce(
-    (sum: number, c: Doc<'captions'>) => sum + c.score,
+  const totalScore = (results ?? []).reduce(
+    (sum: number, c: { score: number }) => sum + c.score,
     0
   )
 
@@ -28,7 +28,7 @@ export function RoundResults({
       </h2>
       <h1 style={{ fontSize: 36 }}>COMPLETE</h1>
 
-      {captions && captions.length > 0 ? (
+      {results && results.length > 0 ? (
         <div className="brutal-card" style={{ padding: 24, width: '100%' }}>
           <p
             style={{
@@ -39,24 +39,26 @@ export function RoundResults({
               marginBottom: 8,
             }}
           >
-            YOUR CAPTIONS ({captions.length}):
+            YOUR CAPTIONS ({results.length}):
           </p>
-          {captions.map((c: Doc<'captions'>) => (
-            <p
-              key={c._id}
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 14,
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                marginBottom: 8,
-                border: '2px solid var(--black)',
-                padding: '8px 12px',
-              }}
-            >
-              "{c.text}" — {c.score} PTS
-            </p>
-          ))}
+          {results.map(
+            (c: { captionId: string; text: string; score: number }) => (
+              <p
+                key={c.captionId}
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  marginBottom: 8,
+                  border: '2px solid var(--black)',
+                  padding: '8px 12px',
+                }}
+              >
+                "{c.text}" — {c.score} PTS
+              </p>
+            )
+          )}
           <div
             style={{
               fontFamily: 'var(--font-body)',

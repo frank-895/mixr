@@ -4,12 +4,11 @@ import { mutation, query } from './_generated/server'
 import {
   DEFAULT_CAPTION_PHASE_DURATION_MS,
   DEFAULT_VOTE_PHASE_DURATION_MS,
-} from './constants'
-import {
-  isValidGameCode,
+  MAX_PHASE_DURATION_MS,
+  MIN_PHASE_DURATION_MS,
   MIN_PLAYERS_TO_START,
-  normalizeGameCode,
-} from './input'
+} from './constants'
+import { isValidGameCode, normalizeGameCode } from './input'
 import { logBoundaryEvent } from './logging'
 import { MEME_IMAGES } from './seed'
 
@@ -90,6 +89,19 @@ export const createGame = mutation({
     const votePhaseDurationMs =
       args.votePhaseDurationMs ?? DEFAULT_VOTE_PHASE_DURATION_MS
 
+    if (
+      captionPhaseDurationMs < MIN_PHASE_DURATION_MS ||
+      captionPhaseDurationMs > MAX_PHASE_DURATION_MS
+    ) {
+      throw new Error('INVALID CAPTION DURATION')
+    }
+    if (
+      votePhaseDurationMs < MIN_PHASE_DURATION_MS ||
+      votePhaseDurationMs > MAX_PHASE_DURATION_MS
+    ) {
+      throw new Error('INVALID VOTE DURATION')
+    }
+
     let code = generateCode()
     let existing = await ctx.db
       .query('games')
@@ -110,6 +122,7 @@ export const createGame = mutation({
       currentRound: 1,
       captionPhaseDurationMs,
       votePhaseDurationMs,
+      activePlayerCount: 0,
     })
 
     return { gameId, code }
@@ -155,16 +168,12 @@ export const startGame = mutation({
       throw new Error('GAME ALREADY STARTED')
     }
 
-    const players = await ctx.db
-      .query('players')
-      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
-      .take(MIN_PLAYERS_TO_START)
-
-    if (players.length < MIN_PLAYERS_TO_START) {
+    const activePlayerCount = game.activePlayerCount ?? 0
+    if (activePlayerCount < MIN_PLAYERS_TO_START) {
       logBoundaryEvent('game_start_rejected', {
         reason: 'not_enough_players',
         gameId: args.gameId,
-        playerCount: players.length,
+        playerCount: activePlayerCount,
         minPlayersToStart: MIN_PLAYERS_TO_START,
       })
       throw new Error(`NEED ${MIN_PLAYERS_TO_START} PLAYERS TO START`)
@@ -198,7 +207,7 @@ export const startGame = mutation({
       gameId: args.gameId,
       roundId,
       totalRounds: game.totalRounds,
-      playerCount: players.length,
+      playerCount: activePlayerCount,
       captionPhaseDurationMs: game.captionPhaseDurationMs,
       votePhaseDurationMs: game.votePhaseDurationMs,
     })

@@ -7,7 +7,7 @@ import {
   useMotionValue,
   useTransform,
 } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -153,16 +153,32 @@ export function VoteScreen({
   playerId: Id<'players'>
   game: Doc<'games'>
 }) {
-  const candidates = useQuery(api.votes.getCandidates, {
+  const snapshot = useQuery(api.votes.getVoteSnapshot, {
     playerId,
     roundId: round._id,
-    count: 5,
   })
   const castVote = useMutation(api.votes.castVote)
   const seconds = useCountdown(round.voteEndsAt)
   const [submitting, setSubmitting] = useState(false)
+  const [localCandidates, setLocalCandidates] = useState<
+    Array<{ captionId: Id<'captions'>; text: string }>
+  >([])
+  const [initializedRoundId, setInitializedRoundId] = useState<string | null>(
+    null
+  )
   const { error, clearError, reject } = useActionFeedback()
-  const current = candidates?.[0]
+  const current = localCandidates[0]
+
+  useEffect(() => {
+    if (initializedRoundId === round._id) return
+    setLocalCandidates([])
+  }, [initializedRoundId, round._id])
+
+  useEffect(() => {
+    if (!snapshot || initializedRoundId === round._id) return
+    setLocalCandidates(snapshot)
+    setInitializedRoundId(round._id)
+  }, [initializedRoundId, round._id, snapshot])
 
   const handleVote = async (value: boolean) => {
     if (!current || submitting) return
@@ -174,6 +190,7 @@ export function VoteScreen({
         captionId: current.captionId,
         value,
       })
+      setLocalCandidates((existing) => existing.slice(1))
     } catch (e) {
       reject(e, 'VOTE REJECTED')
     } finally {

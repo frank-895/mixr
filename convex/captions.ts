@@ -6,8 +6,8 @@ import {
   getPlayerModerationError,
   normalizeCaptionForBlacklist,
 } from './captionModeration'
-import { CAPTION_SUBMISSION_COOLDOWN_MS } from './constants'
-import { MAX_CAPTION_LENGTH, normalizeCaptionText } from './input'
+import { CAPTION_SUBMISSION_COOLDOWN_MS, MAX_CAPTION_LENGTH } from './constants'
+import { normalizeCaptionText } from './input'
 import { logBoundaryEvent } from './logging'
 
 function logCaptionRejection(reason: string, details: Record<string, unknown>) {
@@ -165,8 +165,6 @@ export const submit = mutation({
       userId: args.playerId,
       roundId: args.roundId,
       text: normalized,
-      score: 0,
-      exposureCount: 0,
       createdAt: now,
     })
 
@@ -189,31 +187,21 @@ export const listByRound = query({
 export const getTopCaptions = query({
   args: { roundId: v.id('rounds'), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const round = await ctx.db.get(args.roundId)
-    if (!round) return []
-
     const limit = args.limit ?? 3
-    const captions = await ctx.db
-      .query('captions')
-      .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
-      .take(200)
+    const top = await ctx.db
+      .query('captionRoundStats')
+      .withIndex('by_roundId_and_score', (q) => q.eq('roundId', args.roundId))
+      .order('desc')
+      .take(limit)
 
-    captions.sort((a, b) => b.score - a.score)
-    const top = captions.slice(0, limit)
-
-    const results = []
-    for (const c of top) {
-      const player = await ctx.db.get(c.userId)
-      results.push({
-        captionId: c._id,
-        text: c.text,
-        score: c.score,
-        playerName: player?.name ?? 'Unknown',
-        imageUrl: round.imageUrl,
-        roundNumber: round.roundNumber,
-      })
-    }
-    return results
+    return top.map((entry) => ({
+      captionId: entry.captionId,
+      text: entry.text,
+      score: entry.score,
+      playerName: entry.authorName,
+      imageUrl: entry.imageUrl,
+      roundNumber: entry.roundNumber,
+    }))
   },
 })
 
@@ -221,84 +209,39 @@ export const getGameTopCaptions = query({
   args: { gameId: v.id('games'), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 3
-    const rounds = await ctx.db
-      .query('rounds')
-      .withIndex('by_gameId_and_roundNumber', (q) =>
-        q.eq('gameId', args.gameId)
-      )
-      .take(10)
+    const top = await ctx.db
+      .query('captionRoundStats')
+      .withIndex('by_gameId_and_score', (q) => q.eq('gameId', args.gameId))
+      .order('desc')
+      .take(limit)
 
-    const allCaptions: Array<{
-      captionId: Id<'captions'>
-      text: string
-      score: number
-      userId: Id<'players'>
-      imageUrl: string
-      roundNumber: number
-    }> = []
-
-    for (const round of rounds) {
-      const captions = await ctx.db
-        .query('captions')
-        .withIndex('by_roundId', (q) => q.eq('roundId', round._id))
-        .take(200)
-
-      for (const c of captions) {
-        allCaptions.push({
-          captionId: c._id,
-          text: c.text,
-          score: c.score,
-          userId: c.userId,
-          imageUrl: round.imageUrl,
-          roundNumber: round.roundNumber,
-        })
-      }
-    }
-
-    allCaptions.sort((a, b) => b.score - a.score)
-    const top = allCaptions.slice(0, limit)
-
-    const results = []
-    for (const c of top) {
-      const player = await ctx.db.get(c.userId)
-      results.push({
-        captionId: c.captionId,
-        text: c.text,
-        score: c.score,
-        playerName: player?.name ?? 'Unknown',
-        imageUrl: c.imageUrl,
-        roundNumber: c.roundNumber,
-      })
-    }
-    return results
+    return top.map((entry) => ({
+      captionId: entry.captionId,
+      text: entry.text,
+      score: entry.score,
+      playerName: entry.authorName,
+      imageUrl: entry.imageUrl,
+      roundNumber: entry.roundNumber,
+    }))
   },
 })
 
 export const getRoundCaptions = query({
   args: { roundId: v.id('rounds') },
   handler: async (ctx, args) => {
-    const round = await ctx.db.get(args.roundId)
-    if (!round) return []
-
     const captions = await ctx.db
-      .query('captions')
-      .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
+      .query('captionRoundStats')
+      .withIndex('by_roundId_and_score', (q) => q.eq('roundId', args.roundId))
+      .order('desc')
       .take(200)
 
-    const results = []
-    for (const c of captions) {
-      const player = await ctx.db.get(c.userId)
-      results.push({
-        captionId: c._id as string,
-        text: c.text,
-        score: c.score,
-        playerName: player?.name ?? 'Unknown',
-        imageUrl: round.imageUrl,
-      })
-    }
-
-    results.sort((a, b) => b.score - a.score)
-    return results
+    return captions.map((entry) => ({
+      captionId: entry.captionId as string,
+      text: entry.text,
+      score: entry.score,
+      playerName: entry.authorName,
+      imageUrl: entry.imageUrl,
+    }))
   },
 })
 
@@ -311,5 +254,23 @@ export const getPlayerCaptions = query({
         q.eq('userId', args.playerId).eq('roundId', args.roundId)
       )
       .take(50)
+  },
+})
+
+export const getPlayerRoundResults = query({
+  args: { playerId: v.id('players'), roundId: v.id('rounds') },
+  handler: async (ctx, args) => {
+    const stats = await ctx.db
+      .query('captionRoundStats')
+      .withIndex('by_authorId_and_roundId', (q) =>
+        q.eq('authorId', args.playerId).eq('roundId', args.roundId)
+      )
+      .take(50)
+
+    return stats.map((entry) => ({
+      captionId: entry.captionId,
+      text: entry.text,
+      score: entry.score,
+    }))
   },
 })

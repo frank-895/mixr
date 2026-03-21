@@ -5,6 +5,10 @@ import type { MutationCtx } from '../_generated/server'
 import { internalMutation } from '../_generated/server'
 import { GAME_RETENTION_MS, REVEAL_PHASE_DURATION_MS } from '../constants'
 import { MEME_IMAGES } from '../seed'
+import {
+  initializeRoundVoteArtifacts,
+  recomputeRoundAggregates,
+} from './roundStats'
 
 export const endCaptionPhase = internalMutation({
   args: { roundId: v.id('rounds') },
@@ -20,6 +24,8 @@ export const endCaptionPhase = internalMutation({
     if (!game) return
 
     const now = Date.now()
+    await initializeRoundVoteArtifacts(ctx, round)
+
     await ctx.db.patch(args.roundId, {
       state: 'vote',
       voteEndsAt: now + game.votePhaseDurationMs,
@@ -47,10 +53,15 @@ export const endVotePhase = internalMutation({
     if (round.scheduledEndVoteJobId) {
       await ctx.scheduler.cancel(round.scheduledEndVoteJobId)
     }
+    if (round.scheduledRefreshStatsJobId) {
+      await ctx.scheduler.cancel(round.scheduledRefreshStatsJobId)
+    }
+
+    await recomputeRoundAggregates(ctx, args.roundId)
 
     // Check if there are any captions to reveal
     const captions = await ctx.db
-      .query('captions')
+      .query('captionRoundStats')
       .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
       .take(1)
 
@@ -59,6 +70,7 @@ export const endVotePhase = internalMutation({
       await ctx.db.patch(args.roundId, {
         state: 'finished',
         scheduledEndVoteJobId: undefined,
+        scheduledRefreshStatsJobId: undefined,
       })
       await advanceGame(ctx, round.gameId)
       return
@@ -68,6 +80,7 @@ export const endVotePhase = internalMutation({
     await ctx.db.patch(args.roundId, {
       state: 'reveal',
       scheduledEndVoteJobId: undefined,
+      scheduledRefreshStatsJobId: undefined,
       revealEndsAt: now + REVEAL_PHASE_DURATION_MS,
     })
 
@@ -97,6 +110,20 @@ export const endRevealPhase = internalMutation({
     })
 
     await advanceGame(ctx, round.gameId)
+  },
+})
+
+export const refreshRoundStats = internalMutation({
+  args: { roundId: v.id('rounds') },
+  handler: async (ctx, args) => {
+    const round = await ctx.db.get(args.roundId)
+    if (!round) return
+
+    await ctx.db.patch(args.roundId, {
+      scheduledRefreshStatsJobId: undefined,
+    })
+
+    await recomputeRoundAggregates(ctx, args.roundId)
   },
 })
 

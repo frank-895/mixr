@@ -1,11 +1,7 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
-import {
-  hasInvalidPlayerNameChars,
-  MAX_PLAYER_NAME_LENGTH,
-  MAX_PLAYERS_PER_GAME,
-  normalizePlayerName,
-} from './input'
+import { MAX_PLAYER_NAME_LENGTH, MAX_PLAYERS_PER_GAME } from './constants'
+import { hasInvalidPlayerNameChars, normalizePlayerName } from './input'
 import { logBoundaryEvent } from './logging'
 
 export const join = mutation({
@@ -77,12 +73,8 @@ export const join = mutation({
       throw new Error('NAME ALREADY TAKEN')
     }
 
-    const players = await ctx.db
-      .query('players')
-      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
-      .take(MAX_PLAYERS_PER_GAME)
-
-    if (players.length >= MAX_PLAYERS_PER_GAME) {
+    const activePlayerCount = game.activePlayerCount ?? 0
+    if (activePlayerCount >= MAX_PLAYERS_PER_GAME) {
       logBoundaryEvent('join_rejected', {
         reason: 'game_full',
         gameId: args.gameId,
@@ -98,6 +90,17 @@ export const join = mutation({
       name: normalized,
       kickedAt: undefined,
       kickReason: undefined,
+    })
+
+    await ctx.db.insert('playerGameStats', {
+      gameId: args.gameId,
+      playerId,
+      playerName: normalized,
+      totalScore: 0,
+    })
+
+    await ctx.db.patch(args.gameId, {
+      activePlayerCount: activePlayerCount + 1,
     })
 
     logBoundaryEvent('player_joined', {
@@ -171,6 +174,19 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.playerId)
+    const stats = await ctx.db
+      .query('playerGameStats')
+      .withIndex('by_gameId_and_playerId', (q) =>
+        q.eq('gameId', args.gameId).eq('playerId', args.playerId)
+      )
+      .unique()
+    if (stats) {
+      await ctx.db.delete(stats._id)
+    }
+    const activePlayerCount = game.activePlayerCount ?? 0
+    await ctx.db.patch(args.gameId, {
+      activePlayerCount: Math.max(0, activePlayerCount - 1),
+    })
     logBoundaryEvent('player_removed', {
       gameId: args.gameId,
       playerId: args.playerId,
@@ -183,47 +199,16 @@ export const remove = mutation({
 export const getScores = query({
   args: { gameId: v.id('games') },
   handler: async (ctx, args) => {
-    const players = await ctx.db
-      .query('players')
-      .withIndex('by_gameId', (q) => q.eq('gameId', args.gameId))
+    const stats = await ctx.db
+      .query('playerGameStats')
+      .withIndex('by_gameId_and_totalScore', (q) => q.eq('gameId', args.gameId))
+      .order('desc')
       .take(MAX_PLAYERS_PER_GAME)
 
-    const rounds = await ctx.db
-      .query('rounds')
-      .withIndex('by_gameId_and_roundNumber', (q) =>
-        q.eq('gameId', args.gameId)
-      )
-      .take(10)
-
-    const roundIds = new Set(rounds.map((r) => r._id))
-
-    const scores: { playerId: string; name: string; totalScore: number }[] = []
-
-    for (const player of players) {
-      if (player.kickedAt !== undefined) {
-        continue
-      }
-
-      let totalScore = 0
-      const captions = await ctx.db
-        .query('captions')
-        .withIndex('by_userId_and_roundId', (q) => q.eq('userId', player._id))
-        .take(50)
-
-      for (const caption of captions) {
-        if (roundIds.has(caption.roundId)) {
-          totalScore += caption.score
-        }
-      }
-
-      scores.push({
-        playerId: player._id,
-        name: player.name,
-        totalScore,
-      })
-    }
-
-    scores.sort((a, b) => b.totalScore - a.totalScore)
-    return scores
+    return stats.map((entry) => ({
+      playerId: entry.playerId,
+      name: entry.playerName,
+      totalScore: entry.totalScore,
+    }))
   },
 })

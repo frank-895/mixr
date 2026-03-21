@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
-import { MAX_CAPTION_LENGTH } from '../../../convex/input'
+import { MAX_CAPTION_LENGTH } from '../../../convex/constants'
 import { useActionFeedback } from '../../lib/useActionFeedback'
 import { useCountdown } from '../../lib/useCountdown'
 

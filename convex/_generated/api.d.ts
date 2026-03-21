@@ -14,6 +14,7 @@ import type * as constants from "../constants.js";
 import type * as games from "../games.js";
 import type * as input from "../input.js";
 import type * as internal_gameCleanup from "../internal/gameCleanup.js";
+import type * as internal_roundStats from "../internal/roundStats.js";
 import type * as internal_roundTransitions from "../internal/roundTransitions.js";
 import type * as logging from "../logging.js";
 import type * as players from "../players.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   games: typeof games;
   input: typeof input;
   "internal/gameCleanup": typeof internal_gameCleanup;
+  "internal/roundStats": typeof internal_roundStats;
   "internal/roundTransitions": typeof internal_roundTransitions;
   logging: typeof logging;
   players: typeof players;
