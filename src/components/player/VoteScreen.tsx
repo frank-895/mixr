@@ -7,7 +7,7 @@ import {
   useMotionValue,
   useTransform,
 } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useWebHaptics } from 'web-haptics/react'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -35,19 +35,6 @@ function SwipeableCard({
   const rejectOpacity = useTransform(x, [-SWIPE_THRESHOLD, 0], [1, 0])
   const pastThreshold = useRef(false)
 
-  useEffect(() => {
-    const unsubscribe = x.on('change', (latest) => {
-      const crossed = Math.abs(latest) > SWIPE_THRESHOLD
-      if (crossed && !pastThreshold.current) {
-        trigger([{ duration: 20, intensity: 0.7 }])
-        pastThreshold.current = true
-      } else if (!crossed) {
-        pastThreshold.current = false
-      }
-    })
-    return unsubscribe
-  }, [x, trigger])
-
   const flyOff = (dir: number) => {
     const flyX = dir * 500
     const flyRotate = dir * 20
@@ -55,6 +42,17 @@ function SwipeableCard({
       animate(x, flyX, { duration: 0.25, ease: 'easeIn' }),
       animate(rotate, flyRotate, { duration: 0.25, ease: 'easeIn' }),
     ])
+  }
+
+  // Use onDrag (direct pointer event context) so navigator.vibrate is allowed
+  const handleDrag = (_: unknown, info: PanInfo) => {
+    const crossed = Math.abs(info.offset.x) > SWIPE_THRESHOLD
+    if (crossed && !pastThreshold.current) {
+      trigger([{ duration: 20, intensity: 0.7 }])
+      pastThreshold.current = true
+    } else if (!crossed) {
+      pastThreshold.current = false
+    }
   }
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -75,6 +73,7 @@ function SwipeableCard({
       key={candidate.captionId}
       drag="x"
       dragElastic={0.9}
+      onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       style={{ x, rotate, cursor: 'grab', touchAction: 'pan-y' }}
       initial={{ scale: 0.95, opacity: 0, y: 30 }}
