@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../convex/_generated/api.js'
+import { MAX_PLAYER_NAME_LENGTH } from '../convex/constants.js'
 
 export type LoadDemoConfig = {
   convexUrl: string
@@ -81,7 +82,7 @@ type Latencies = {
 
 const BOT_NAME_PREFIX = 'BOT'
 const BOT_NAME_MIN_TOTAL_LENGTH = 6
-const BOT_NAME_MAX_TOTAL_LENGTH = 20
+const BOT_NAME_MAX_TOTAL_LENGTH = MAX_PLAYER_NAME_LENGTH
 const BOT_NAME_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 const DEFAULT_SUMMARY_PREFIX = 'mixr-load-demo'
 const GAME_LOOKUP_TIMEOUT_MS = 10 * 60 * 1000

@@ -2,6 +2,7 @@ import { useMutation } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { MAX_PLAYER_NAME_LENGTH } from '../../../convex/constants'
 import { useActionFeedback } from '../../lib/useActionFeedback'
 
 export function JoinScreen({
@@ -84,7 +85,7 @@ export function JoinScreen({
               clearError()
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-            maxLength={20}
+            maxLength={MAX_PLAYER_NAME_LENGTH}
             autoComplete="off"
             spellCheck={false}
           />
