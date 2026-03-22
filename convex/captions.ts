@@ -208,18 +208,21 @@ export const getTopCaptions = query({
   args: { roundId: v.id('rounds'), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 3
-    const top = await ctx.db
-      .query('captionRoundStats')
-      .withIndex('by_roundId_and_score', (q) => q.eq('roundId', args.roundId))
-      .order('desc')
-      .take(limit)
+    const [top, round] = await Promise.all([
+      ctx.db
+        .query('captionRoundStats')
+        .withIndex('by_roundId_and_score', (q) => q.eq('roundId', args.roundId))
+        .order('desc')
+        .take(limit),
+      ctx.db.get(args.roundId),
+    ])
 
     return top.map((entry) => ({
       captionId: entry.captionId,
       text: entry.text,
       score: entry.score,
       playerName: entry.authorName,
-      imageUrl: entry.imageUrl,
+      imageUrl: entry.imageUrl ?? round?.imageUrl,
       roundNumber: entry.roundNumber,
     }))
   },
@@ -235,12 +238,20 @@ export const getGameTopCaptions = query({
       .order('desc')
       .take(limit)
 
+    const roundIds = [...new Set(top.map((entry) => entry.roundId))]
+    const rounds = await Promise.all(roundIds.map((id) => ctx.db.get(id)))
+    const imageByRoundId = new Map(
+      rounds
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .map((r) => [r._id, r.imageUrl])
+    )
+
     return top.map((entry) => ({
       captionId: entry.captionId,
       text: entry.text,
       score: entry.score,
       playerName: entry.authorName,
-      imageUrl: entry.imageUrl,
+      imageUrl: entry.imageUrl ?? imageByRoundId.get(entry.roundId),
       roundNumber: entry.roundNumber,
     }))
   },

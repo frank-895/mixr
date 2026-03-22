@@ -65,7 +65,6 @@ export async function initializeRoundVoteArtifacts(
       authorId: caption.userId,
       authorName: playerNameById.get(caption.userId) ?? 'Unknown',
       text: caption.text,
-      imageUrl: round.imageUrl,
       score: 0,
       upvoteCount: 0,
       downvoteCount: 0,

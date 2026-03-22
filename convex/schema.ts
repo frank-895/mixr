@@ -98,7 +98,7 @@ export default defineSchema({
     authorId: v.id('players'),
     authorName: v.string(),
     text: v.string(),
-    imageUrl: v.string(),
+    imageUrl: v.optional(v.string()),
     score: v.number(),
     upvoteCount: v.number(),
     downvoteCount: v.number(),
