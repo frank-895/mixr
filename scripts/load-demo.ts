@@ -586,37 +586,30 @@ async function runCaptionPhase(args: {
   await Promise.all(
     args.bots.map(async (bot) => {
       await sleep(randomDelay(bot.captionIntervalMs))
-      let captionAttempt = 0
-
-      while (
-        Date.now() <
+      if (
+        Date.now() >=
         args.round.captionEndsAt - CAPTION_SUBMISSION_GUARD_MS
       ) {
-        args.attempts.captions += 1
+        return
+      }
 
-        try {
-          await args.client.mutation(
-            api.captions.submit,
-            {
-              playerId: bot.playerId,
-              roundId: args.round._id,
-              text: buildCaptionText(
-                bot.index,
-                args.round.roundNumber * 1000 + captionAttempt
-              ),
-            },
-            { skipQueue: true }
-          )
-          args.status.captionsThisRound += 1
-          args.status.totalCaptions += 1
-        } catch (error) {
-          const key = classifyError('caption', error)
-          args.errors[key] = (args.errors[key] ?? 0) + 1
-          if (key === 'caption_closed' || key === 'caption_late') return
-        }
+      args.attempts.captions += 1
 
-        captionAttempt += 1
-        await sleep(bot.captionIntervalMs)
+      try {
+        await args.client.mutation(
+          api.captions.submit,
+          {
+            playerId: bot.playerId,
+            roundId: args.round._id,
+            text: buildCaptionText(bot.index, args.round.roundNumber),
+          },
+          { skipQueue: true }
+        )
+        args.status.captionsThisRound += 1
+        args.status.totalCaptions += 1
+      } catch (error) {
+        const key = classifyError('caption', error)
+        args.errors[key] = (args.errors[key] ?? 0) + 1
       }
     })
   )
