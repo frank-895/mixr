@@ -190,6 +190,7 @@ function HostLanding({
   const [rounds, setRounds] = useState(3)
   const [captionSeconds, setCaptionSeconds] = useState(60)
   const [voteSeconds, setVoteSeconds] = useState(60)
+  const [maxCaptions, setMaxCaptions] = useState(1)
   const [creating, setCreating] = useState(false)
 
   const handleCreate = async () => {
@@ -199,6 +200,7 @@ function HostLanding({
         totalRounds: rounds,
         captionPhaseDurationMs: captionSeconds * 1000,
         votePhaseDurationMs: voteSeconds * 1000,
+        maxCaptionsPerPlayer: maxCaptions,
       })
       navigate('/host', { game: code })
     } catch {
@@ -224,6 +226,7 @@ function HostLanding({
           value={voteSeconds}
           onChange={setVoteSeconds}
         />
+        <CaptionLimitPicker value={maxCaptions} onChange={setMaxCaptions} />
       </div>
 
       <button
@@ -365,6 +368,70 @@ function DurationPicker({
               }}
             >
               {formatSeconds(s)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CAPTION_LIMIT_OPTIONS = Array.from({ length: 10 }, (_, i) => i + 1)
+
+function CaptionLimitPicker({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (n: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div className="rounds-picker" ref={ref}>
+      <button
+        type="button"
+        className="rounds-picker__trigger"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+      >
+        <span>
+          {value} {value === 1 ? 'CAPTION' : 'CAPTIONS'} PER PLAYER
+        </span>
+        <span
+          className={`material-symbols-outlined rounds-picker__chevron ${open ? 'rounds-picker__chevron--open' : ''}`}
+          aria-hidden="true"
+        >
+          expand_more
+        </span>
+      </button>
+      {open && (
+        <div className="rounds-picker__menu" role="listbox">
+          {CAPTION_LIMIT_OPTIONS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="option"
+              aria-selected={n === value}
+              className={`rounds-picker__option ${n === value ? 'rounds-picker__option--active' : ''}`}
+              onClick={() => {
+                onChange(n)
+                setOpen(false)
+              }}
+            >
+              {n}
             </button>
           ))}
         </div>

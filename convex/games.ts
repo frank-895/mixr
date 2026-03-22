@@ -5,7 +5,9 @@ import { mutation, query } from './_generated/server'
 import { requireAuthUserId, requireGameHost } from './authHelpers'
 import {
   DEFAULT_CAPTION_PHASE_DURATION_MS,
+  DEFAULT_MAX_CAPTIONS_PER_PLAYER,
   DEFAULT_VOTE_PHASE_DURATION_MS,
+  MAX_CAPTIONS_PER_PLAYER_LIMIT,
   MAX_PHASE_DURATION_MS,
   MIN_PHASE_DURATION_MS,
   MIN_PLAYERS_TO_START,
@@ -84,6 +86,7 @@ export const createGame = mutation({
     totalRounds: v.number(),
     captionPhaseDurationMs: v.optional(v.number()),
     votePhaseDurationMs: v.optional(v.number()),
+    maxCaptionsPerPlayer: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const hostUserId = await requireAuthUserId(ctx)
@@ -96,6 +99,8 @@ export const createGame = mutation({
       args.captionPhaseDurationMs ?? DEFAULT_CAPTION_PHASE_DURATION_MS
     const votePhaseDurationMs =
       args.votePhaseDurationMs ?? DEFAULT_VOTE_PHASE_DURATION_MS
+    const maxCaptionsPerPlayer =
+      args.maxCaptionsPerPlayer ?? DEFAULT_MAX_CAPTIONS_PER_PLAYER
 
     if (
       captionPhaseDurationMs < MIN_PHASE_DURATION_MS ||
@@ -108,6 +113,12 @@ export const createGame = mutation({
       votePhaseDurationMs > MAX_PHASE_DURATION_MS
     ) {
       throw new Error('INVALID VOTE DURATION')
+    }
+    if (
+      maxCaptionsPerPlayer < 1 ||
+      maxCaptionsPerPlayer > MAX_CAPTIONS_PER_PLAYER_LIMIT
+    ) {
+      throw new Error('INVALID CAPTIONS PER PLAYER')
     }
 
     let code = generateCode()
@@ -131,6 +142,7 @@ export const createGame = mutation({
       currentRound: 1,
       captionPhaseDurationMs,
       votePhaseDurationMs,
+      maxCaptionsPerPlayer,
       activePlayerCount: 0,
       expiresAt: getLobbyExpiresAt(Date.now()),
     })

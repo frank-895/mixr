@@ -12,6 +12,7 @@ export default defineSchema({
     currentRound: v.number(),
     captionPhaseDurationMs: v.number(),
     votePhaseDurationMs: v.number(),
+    maxCaptionsPerPlayer: v.optional(v.number()),
     activePlayerCount: v.optional(v.number()),
     finishedAt: v.optional(v.number()),
     expiresAt: v.number(),

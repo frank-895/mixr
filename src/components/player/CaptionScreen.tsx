@@ -24,6 +24,10 @@ export function CaptionScreen({
     gameId: game._id,
     playerId,
   })
+  const myCaptions = useQuery(api.captions.getPlayerCaptions, {
+    playerId,
+    roundId: round._id,
+  })
   const submitCaption = useMutation(api.captions.submit)
   const timerTarget = deadline ?? round.captionEndsAt
   const seconds = useCountdown(timerTarget)
@@ -81,6 +85,10 @@ export function CaptionScreen({
     }
   }
 
+  const maxCaptions = game.maxCaptionsPerPlayer ?? Infinity
+  const captionCount = myCaptions?.length ?? 0
+  const limitReached = captionCount >= maxCaptions
+
   const formatted = String(seconds).padStart(2, '0')
 
   return (
@@ -136,8 +144,9 @@ export function CaptionScreen({
             ref={textareaRef}
             id="caption"
             className={`brutal-textarea ${isRejected ? 'ui-rejected' : ''}`}
-            placeholder="MAKE IT FUNNY..."
+            placeholder={limitReached ? 'LIMIT REACHED' : 'MAKE IT FUNNY...'}
             value={text}
+            disabled={limitReached}
             onChange={(e) => {
               setText(e.target.value.slice(0, MAX_CAPTION_LENGTH))
               clearError()
@@ -177,17 +186,25 @@ export function CaptionScreen({
           type="button"
           className="brutal-btn brutal-btn--green"
           onClick={handleSubmit}
-          disabled={submitting || !text.trim() || cooldownLeft > 0}
+          disabled={
+            limitReached || submitting || !text.trim() || cooldownLeft > 0
+          }
         >
           <span>
-            {cooldownLeft > 0
-              ? `WAIT ${cooldownLeft}S...`
-              : submitting
-                ? 'SUBMITTING...'
-                : 'SUBMIT CAPTION'}
+            {limitReached
+              ? 'LIMIT REACHED'
+              : cooldownLeft > 0
+                ? `WAIT ${cooldownLeft}S...`
+                : submitting
+                  ? 'SUBMITTING...'
+                  : 'SUBMIT CAPTION'}
           </span>
           <span className="material-symbols-outlined" aria-hidden="true">
-            {cooldownLeft > 0 ? 'hourglass_empty' : 'send'}
+            {limitReached
+              ? 'block'
+              : cooldownLeft > 0
+                ? 'hourglass_empty'
+                : 'send'}
           </span>
         </button>
       </div>

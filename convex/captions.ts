@@ -6,7 +6,11 @@ import {
   getPlayerModerationError,
   normalizeCaptionForBlacklist,
 } from './captionModeration'
-import { CAPTION_SUBMISSION_COOLDOWN_MS, MAX_CAPTION_LENGTH } from './constants'
+import {
+  CAPTION_SUBMISSION_COOLDOWN_MS,
+  DEFAULT_MAX_CAPTIONS_PER_PLAYER,
+  MAX_CAPTION_LENGTH,
+} from './constants'
 import { normalizeCaptionText } from './input'
 import { logBoundaryEvent } from './logging'
 
@@ -123,13 +127,26 @@ export const submit = mutation({
       return { status: 'removed', message: moderationError }
     }
 
-    // Enforce 5s cooldown between submissions
     const playerCaptions = await ctx.db
       .query('captions')
       .withIndex('by_userId_and_roundId', (q) =>
         q.eq('userId', args.playerId).eq('roundId', args.roundId)
       )
       .take(50)
+
+    // Enforce per-player caption limit
+    const game = await ctx.db.get(round.gameId)
+    const maxCaptions =
+      game?.maxCaptionsPerPlayer ?? DEFAULT_MAX_CAPTIONS_PER_PLAYER
+    if (playerCaptions.length >= maxCaptions) {
+      logCaptionRejection('caption_limit_reached', {
+        playerId: player._id,
+        roundId: round._id,
+        currentCount: playerCaptions.length,
+        maxCaptions,
+      })
+      throw new Error('CAPTION LIMIT REACHED')
+    }
 
     if (playerCaptions.some((caption) => caption.text === normalized)) {
       logCaptionRejection('duplicate_caption', {
