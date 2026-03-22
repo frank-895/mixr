@@ -169,8 +169,17 @@ const SLIDES = [
             sync
           </span>
           <div>
-            <h3>REAL-TIME SUBSCRIPTIONS</h3>
-            <p>REACTIVE DATA, ZERO POLLING</p>
+            <h3>CONVEX REALTIME BACKEND</h3>
+            <p>LIVE STATE SYNC FOR 500 PLAYERS</p>
+          </div>
+        </div>
+        <div className="pitch-card">
+          <span className="material-symbols-outlined pitch-card__icon pitch-card__icon--pink">
+            database
+          </span>
+          <div>
+            <h3>DENORMALISED SCORES + COUNTS</h3>
+            <p>INCREMENT ON WRITE, NOT RECOMPUTE</p>
           </div>
         </div>
         <div className="pitch-card">
@@ -179,16 +188,7 @@ const SLIDES = [
           </span>
           <div>
             <h3>VOTE SNAPSHOTS</h3>
-            <p>CONSISTENT STATE FOR ALL PLAYERS</p>
-          </div>
-        </div>
-        <div className="pitch-card">
-          <span className="material-symbols-outlined pitch-card__icon pitch-card__icon--pink">
-            speed
-          </span>
-          <div>
-            <h3>THROTTLED UPDATES</h3>
-            <p>SMOOTH UX AT 500 PLAYERS</p>
+            <p>PRECOMPUTED CANDIDATES, CONSISTENT VOTING</p>
           </div>
         </div>
         <div className="pitch-card">
@@ -196,8 +196,8 @@ const SLIDES = [
             shield
           </span>
           <div>
-            <h3>SERVER-SIDE RATE LIMITING</h3>
-            <p>ANTI-SPAM, FAIR PLAY</p>
+            <h3>RATE LIMITED INPUT</h3>
+            <p>CLIENT + SERVER PROTECTION AGAINST SPAM</p>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@ const SLIDES = [
   () => (
     <div className="pitch-slide">
       <h2>WHAT WE BUILT</h2>
-      <p style={{ margin: 0, opacity: 0.6 }}>THE MEME GAME</p>
+      <p style={{ margin: 0, opacity: 0.6 }}>MEME IT</p>
       <div className="pitch-phases">
         <div className="pitch-phase pitch-phase--yellow">
           <span className="material-symbols-outlined pitch-phase__icon">
