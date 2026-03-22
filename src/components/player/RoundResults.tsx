@@ -37,22 +37,13 @@ export function RoundResults({
               fontWeight: 700,
               textTransform: 'uppercase',
               marginBottom: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
             }}
           >
             YOUR CAPTIONS
-            <span
-              className="lobby__player-count"
-              style={{ minWidth: 28, height: 28, fontSize: 14 }}
-            >
-              {results.length}
-            </span>
           </p>
           {results.map(
             (c: { captionId: string; text: string; score: number }) => (
-              <p
+              <div
                 key={c.captionId}
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -62,10 +53,27 @@ export function RoundResults({
                   marginBottom: 8,
                   border: '2px solid var(--black)',
                   padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
                 }}
               >
-                "{c.text}" — {c.score} PTS
-              </p>
+                <span style={{ flex: 1 }}>"{c.text}"</span>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 16,
+                    background: c.score > 0 ? 'var(--primary)' : 'transparent',
+                    border: '2px solid var(--black)',
+                    padding: '2px 8px',
+                    boxShadow: c.score > 0 ? '2px 2px 0px #000' : 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {c.score} PTS
+                </span>
+              </div>
             )
           )}
           <div

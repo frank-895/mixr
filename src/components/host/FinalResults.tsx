@@ -42,19 +42,7 @@ export function FinalResults({ game }: { game: Doc<'games'> }) {
 
   return (
     <div className="host-shell">
-      <header
-        className="brutal-header"
-        style={{ justifyContent: 'center', gap: 12 }}
-      >
-        <div
-          className="badge"
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            group
-          </span>
-          {game.activePlayerCount ?? 0}
-        </div>
+      <header className="brutal-header" style={{ justifyContent: 'center' }}>
         <h2 style={{ fontSize: 24, margin: 0 }}>RESULTS</h2>
       </header>
 

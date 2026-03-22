@@ -225,7 +225,7 @@ export function VoteScreen({
             {myStats?.name ?? '...'}
           </span>
           <span className="badge badge--primary">
-            {myStats?.totalScore ?? 0}
+            {myStats?.totalScore ?? 0} PTS
           </span>
         </div>
         <div className="timer-badge">

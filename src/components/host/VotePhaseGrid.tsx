@@ -34,16 +34,18 @@ export function VotePhaseGrid({
           return (
             <div key={entry.captionId} className="vote-bar-row">
               <div className="vote-bar-caption">{entry.text}</div>
+              <div className="vote-bar-meta">
+                <span className="vote-bar-name">{entry.playerName}</span>
+                {clampedScore > 0 && (
+                  <span className="vote-bar-score">{clampedScore}</span>
+                )}
+              </div>
               <div className="vote-bar-track">
                 <motion.div
                   className={`vote-bar-fill${isLeading ? ' vote-bar-fill--leading' : ''}`}
                   animate={{ width: `${Math.max(pct, 8)}%` }}
                   transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                 />
-                <span className="vote-bar-name">{entry.playerName}</span>
-                {entry.score > 0 && (
-                  <span className="vote-bar-score">+{entry.score}</span>
-                )}
               </div>
             </div>
           )

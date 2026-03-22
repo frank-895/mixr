@@ -1,11 +1,14 @@
 import { useQuery } from 'convex/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
-import type { Doc } from '../../../convex/_generated/dataModel'
+import type { Doc, Id } from '../../../convex/_generated/dataModel'
+
+type CaptionEntry = { _id: Id<'captions'>; text: string }
 
 type VisibleCard = {
   key: number
+  captionId: Id<'captions'>
   captionText: string
   top: number
   left: number
@@ -13,13 +16,13 @@ type VisibleCard = {
 }
 
 const MAX_VISIBLE = 6
-const CYCLE_INTERVAL_MS = 1800
+const MIN_INTERVAL_MS = 800
 
 function randomPosition() {
   return {
-    top: Math.random() * 75 + 2, // 2%–77% so cards stay in view
-    left: Math.random() * 75 + 2, // 2%–77%
-    rotate: (Math.random() - 0.5) * 24, // -12° to 12°
+    top: Math.random() * 50 + 2,
+    left: Math.random() * 60 + 2,
+    rotate: (Math.random() - 0.5) * 24,
   }
 }
 
@@ -34,31 +37,57 @@ export function CaptionPhaseOverlay({
   })
   const [visibleCards, setVisibleCards] = useState<VisibleCard[]>([])
   const nextKey = useRef(0)
-  const lastAddedIndex = useRef(-1)
+  const shownIds = useRef(new Set<Id<'captions'>>())
+  const queue = useRef<CaptionEntry[]>([])
+  const drainTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const addCard = useCallback((caption: CaptionEntry) => {
+    setVisibleCards((prev) => {
+      const next = prev.length >= MAX_VISIBLE ? prev.slice(1) : [...prev]
+      next.push({
+        key: nextKey.current++,
+        captionId: caption._id,
+        captionText: caption.text,
+        ...randomPosition(),
+      })
+      return next
+    })
+  }, [])
+
+  const drainQueue = useCallback(() => {
+    const next = queue.current.shift()
+    if (!next) {
+      drainTimer.current = null
+      return
+    }
+    addCard(next)
+    drainTimer.current = setTimeout(drainQueue, MIN_INTERVAL_MS)
+  }, [addCard])
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (drainTimer.current) clearTimeout(drainTimer.current)
+    }
+  }, [])
+
+  // React to new captions arriving — enqueue and drain at 800ms intervals
   useEffect(() => {
     if (!captions || captions.length === 0) return
 
-    const interval = setInterval(() => {
-      setVisibleCards((prev) => {
-        const next = prev.length >= MAX_VISIBLE ? prev.slice(1) : [...prev]
+    const newCaptions = captions.filter((c) => !shownIds.current.has(c._id))
+    if (newCaptions.length === 0) return
 
-        lastAddedIndex.current = (lastAddedIndex.current + 1) % captions.length
-        const caption = captions[lastAddedIndex.current]
-        const pos = randomPosition()
+    for (const c of newCaptions) {
+      shownIds.current.add(c._id)
+      queue.current.push(c)
+    }
 
-        next.push({
-          key: nextKey.current++,
-          captionText: caption.text,
-          ...pos,
-        })
-
-        return next
-      })
-    }, CYCLE_INTERVAL_MS)
-
-    return () => clearInterval(interval)
-  }, [captions])
+    // Start draining if not already running
+    if (!drainTimer.current) {
+      drainQueue()
+    }
+  }, [captions, drainQueue])
 
   const count = captions?.length ?? 0
 
