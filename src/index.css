@@ -1074,7 +1074,7 @@ p {
 
 .caption-card {
   position: absolute;
-  width: clamp(180px, 30%, 280px);
+  width: clamp(260px, 42%, 400px);
   border: 3px solid var(--black);
   box-shadow: var(--shadow);
   background: var(--muted);
@@ -1143,55 +1143,13 @@ p {
 }
 
 .vote-bar-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.vote-bar-caption {
-  font-family: var(--font-display);
-  font-size: clamp(14px, 2vw, 20px);
-  font-weight: 700;
-  text-transform: uppercase;
-  line-height: 1.2;
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
-.vote-bar-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.vote-bar-name {
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.vote-bar-score {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border: 3px solid var(--black);
-  background: var(--primary);
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.vote-bar-track {
   position: relative;
-  height: 28px;
-  background: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
   border: 2px solid var(--black);
+  background: var(--muted);
   overflow: hidden;
 }
 
@@ -1204,6 +1162,52 @@ p {
 
 .vote-bar-fill--leading {
   background: var(--primary);
+}
+
+.vote-bar-score {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border: 3px solid var(--black);
+  background: var(--primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.vote-bar-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.vote-bar-caption {
+  font-family: var(--font-display);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vote-bar-name {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--black);
 }
 
 /* ===== REVEAL SCREEN ===== */
@@ -1240,19 +1244,15 @@ p {
 .reveal-place-badge {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 24px;
+  justify-content: center;
+  padding: 12px 32px;
   border: var(--border);
   box-shadow: var(--shadow);
 }
 
-.reveal-place-emoji {
-  font-size: 32px;
-}
-
 .reveal-place-label {
   font-family: var(--font-heading);
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1295,9 +1295,7 @@ p {
 }
 
 .reveal-author-score {
-  font-family: var(--font-body);
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
 }
 
 .reveal-leaderboard {

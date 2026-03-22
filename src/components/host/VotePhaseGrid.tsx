@@ -33,19 +33,17 @@ export function VotePhaseGrid({
           const isLeading = clampedScore === maxScore && maxScore > 0
           return (
             <div key={entry.captionId} className="vote-bar-row">
-              <div className="vote-bar-caption">{entry.text}</div>
-              <div className="vote-bar-meta">
+              <motion.div
+                className={`vote-bar-fill${isLeading ? ' vote-bar-fill--leading' : ''}`}
+                animate={{ width: `${Math.max(pct, 8)}%` }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              />
+              {clampedScore > 0 && (
+                <span className="vote-bar-score">{clampedScore}</span>
+              )}
+              <div className="vote-bar-text">
+                <span className="vote-bar-caption">{entry.text}</span>
                 <span className="vote-bar-name">{entry.playerName}</span>
-                {clampedScore > 0 && (
-                  <span className="vote-bar-score">{clampedScore}</span>
-                )}
-              </div>
-              <div className="vote-bar-track">
-                <motion.div
-                  className={`vote-bar-fill${isLeading ? ' vote-bar-fill--leading' : ''}`}
-                  animate={{ width: `${Math.max(pct, 8)}%` }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                />
               </div>
             </div>
           )

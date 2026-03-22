@@ -12,9 +12,9 @@ type RevealStep = -1 | 0 | 1 | 2 | 3
 const CAPTION_DELAYS = [2000, 5000, 5000, 6000] // intro, 3rd, 2nd, 1st
 
 const PLACE_CONFIG = [
-  { label: '3RD PLACE', color: '#cd7f32', emoji: '🥉' },
-  { label: '2ND PLACE', color: '#c0c0c0', emoji: '🥈' },
-  { label: '1ST PLACE', color: '#ffd700', emoji: '🥇' },
+  { label: '3RD PLACE', bg: 'var(--white)' },
+  { label: '2ND PLACE', bg: 'var(--white)' },
+  { label: '1ST PLACE', bg: 'var(--primary)' },
 ] as const
 
 type ScoreEntry = { playerId: string; name: string; totalScore: number }
@@ -187,7 +187,7 @@ function MemeRevealCard({
       {/* Place badge */}
       <motion.div
         className="reveal-place-badge"
-        style={{ background: config.color }}
+        style={{ background: config.bg }}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{
@@ -197,7 +197,6 @@ function MemeRevealCard({
           delay: 0.2,
         }}
       >
-        <span className="reveal-place-emoji">{config.emoji}</span>
         <span className="reveal-place-label">{config.label}</span>
       </motion.div>
 
@@ -217,7 +216,9 @@ function MemeRevealCard({
         transition={{ delay: 0.4 }}
       >
         <span className="reveal-author-name">{caption.playerName}</span>
-        <span className="reveal-author-score">{caption.score} PTS</span>
+        <span className="reveal-author-score badge badge--primary">
+          {caption.score} PTS
+        </span>
       </motion.div>
     </motion.div>
   )
