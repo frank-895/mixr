@@ -66,15 +66,6 @@ const SLIDES = [
                 <p>8 PLAYERS MAX</p>
               </div>
             </div>
-            <div className="pitch-card">
-              <span className="material-symbols-outlined pitch-card__icon">
-                lock
-              </span>
-              <div>
-                <h3>CLOSED</h3>
-                <p>NO CUSTOM GAME CREATION</p>
-              </div>
-            </div>
           </div>
         </div>
         <div className="pitch-split__divider" />
@@ -106,15 +97,6 @@ const SLIDES = [
               <div>
                 <h3>SCALES TO 500+</h3>
                 <p>REAL-TIME FOR EVERYONE</p>
-              </div>
-            </div>
-            <div className="pitch-card pitch-card--highlight">
-              <span className="material-symbols-outlined pitch-card__icon pitch-card__icon--primary">
-                extension
-              </span>
-              <div>
-                <h3>OPEN PLATFORM</h3>
-                <p>BUILD YOUR OWN GAMES</p>
               </div>
             </div>
           </div>
