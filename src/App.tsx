@@ -4,12 +4,17 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../convex/_generated/api'
 import { HostApp } from './components/host/HostApp'
 import { Loader } from './components/Loader'
+import { PitchDeck } from './components/PitchDeck'
 import { PlayerApp } from './components/player/PlayerApp'
 import { useActionFeedback } from './lib/useActionFeedback'
 import { useRoute } from './lib/useRoute'
 
 function App() {
   const { mode, gameCode, navigate } = useRoute()
+
+  if (mode === 'hack') {
+    return <PitchDeck navigate={navigate} />
+  }
 
   if (mode === 'host' && gameCode) {
     return <HostRoute gameCode={gameCode} navigate={navigate} />

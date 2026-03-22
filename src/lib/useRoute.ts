@@ -5,11 +5,14 @@ type Route =
   | { mode: 'host-landing'; gameCode: null }
   | { mode: 'host'; gameCode: string }
   | { mode: 'player'; gameCode: string }
+  | { mode: 'hack'; gameCode: null }
 
 function getRoute(): Route {
   const path = window.location.pathname
   const params = new URLSearchParams(window.location.search)
   const gameCode = params.get('game') ?? params.get('code')
+
+  if (path === '/hack') return { mode: 'hack' as const, gameCode: null }
 
   if (path === '/host') {
     if (gameCode) return { mode: 'host', gameCode: gameCode.toUpperCase() }
