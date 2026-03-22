@@ -11,10 +11,7 @@ import {
   getRevealPhaseExpiresAt,
   getVotePhaseExpiresAt,
 } from './gameExpiry'
-import {
-  initializeRoundVoteArtifacts,
-  recomputeRoundAggregates,
-} from './roundStats'
+import { initializeRoundVoteArtifacts } from './roundStats'
 
 export const endCaptionPhase = internalMutation({
   args: { roundId: v.id('rounds') },
@@ -89,18 +86,18 @@ export const endVotePhase = internalMutation({
       await ctx.scheduler.cancel(round.scheduledRefreshStatsJobId)
     }
 
+    let captionCount: number
     if (round.voteSnapshotReady !== true) {
-      await initializeRoundVoteArtifacts(ctx, round)
+      captionCount = await initializeRoundVoteArtifacts(ctx, round)
+    } else {
+      const captions = await ctx.db
+        .query('captionRoundStats')
+        .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
+        .take(1)
+      captionCount = captions.length
     }
-    await recomputeRoundAggregates(ctx, args.roundId)
 
-    // Check if there are any captions to reveal
-    const captions = await ctx.db
-      .query('captionRoundStats')
-      .withIndex('by_roundId', (q) => q.eq('roundId', args.roundId))
-      .take(1)
-
-    if (captions.length === 0) {
+    if (captionCount === 0) {
       // No captions — skip reveal, go straight to finished
       await ctx.db.patch(args.roundId, {
         state: 'finished',
@@ -115,14 +112,6 @@ export const endVotePhase = internalMutation({
 
     const now = Date.now()
     const revealEndsAt = now + REVEAL_PHASE_DURATION_MS
-    await ctx.db.patch(args.roundId, {
-      state: 'reveal',
-      voteSnapshotReady: true,
-      scheduledPrepareVoteArtifactsJobId: undefined,
-      scheduledEndVoteJobId: undefined,
-      scheduledRefreshStatsJobId: undefined,
-      revealEndsAt,
-    })
 
     const scheduledEndRevealJobId = await ctx.scheduler.runAfter(
       REVEAL_PHASE_DURATION_MS,
@@ -130,7 +119,15 @@ export const endVotePhase = internalMutation({
       { roundId: args.roundId }
     )
 
-    await ctx.db.patch(args.roundId, { scheduledEndRevealJobId })
+    await ctx.db.patch(args.roundId, {
+      state: 'reveal',
+      voteSnapshotReady: true,
+      scheduledPrepareVoteArtifactsJobId: undefined,
+      scheduledEndVoteJobId: undefined,
+      scheduledRefreshStatsJobId: undefined,
+      revealEndsAt,
+      scheduledEndRevealJobId,
+    })
     await ctx.db.patch(round.gameId, {
       expiresAt: getRevealPhaseExpiresAt(now),
     })
