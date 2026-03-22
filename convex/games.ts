@@ -9,6 +9,7 @@ import {
   DEFAULT_VOTE_PHASE_DURATION_MS,
   MAX_CAPTIONS_PER_PLAYER_LIMIT,
   MAX_PHASE_DURATION_MS,
+  MAX_ROUNDS_PER_GAME,
   MIN_PHASE_DURATION_MS,
   MIN_PLAYERS_TO_START,
 } from './constants'
@@ -93,8 +94,10 @@ export const createGame = mutation({
   handler: async (ctx, args) => {
     const hostUserId = await requireAuthUserId(ctx)
 
-    if (args.totalRounds < 1 || args.totalRounds > 10) {
-      throw new Error('totalRounds must be between 1 and 10')
+    if (args.totalRounds < 1 || args.totalRounds > MAX_ROUNDS_PER_GAME) {
+      throw new Error(
+        `totalRounds must be between 1 and ${MAX_ROUNDS_PER_GAME}`
+      )
     }
 
     const captionPhaseDurationMs =

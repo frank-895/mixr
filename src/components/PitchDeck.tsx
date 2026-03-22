@@ -249,7 +249,7 @@ const slideVariants = {
   exit: { opacity: 0, y: -24 },
 }
 
-const slideTransition = { duration: 0.3, ease: 'easeOut' }
+const slideTransition = { duration: 0.3, ease: 'easeOut' as const }
 
 export function PitchDeck({ navigate }: PitchDeckProps) {
   const [current, setCurrent] = useState(0)

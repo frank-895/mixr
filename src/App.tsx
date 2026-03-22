@@ -2,6 +2,7 @@ import { useAuthActions } from '@convex-dev/auth/react'
 import { useConvex, useConvexAuth, useMutation } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../convex/_generated/api'
+import { MAX_ROUNDS_PER_GAME } from '../convex/constants'
 import { HostApp } from './components/host/HostApp'
 import { Loader } from './components/Loader'
 import { PitchDeck } from './components/PitchDeck'
@@ -267,7 +268,7 @@ function RoundsPicker({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const options = Array.from({ length: 10 }, (_, i) => i + 1)
+  const options = Array.from({ length: MAX_ROUNDS_PER_GAME }, (_, i) => i + 1)
 
   return (
     <div className="rounds-picker" ref={ref}>
