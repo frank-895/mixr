@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { Crown } from './Crown'
+import { HostButton } from './HostButton'
 
 interface PitchDeckProps {
   navigate: (path: string, params?: Record<string, string>) => void
@@ -257,16 +258,12 @@ export function PitchDeck({ navigate }: PitchDeckProps) {
       return (
         <div className="pitch-slide">
           <h1>LET'S SEE IT LIVE</h1>
-          <button
-            type="button"
+          <HostButton
+            navigate={navigate}
+            label="LAUNCH DEMO"
+            icon="rocket_launch"
             className="brutal-btn pitch-demo-btn"
-            onClick={() => navigate('/host')}
-          >
-            <span>LAUNCH DEMO</span>
-            <span className="material-symbols-outlined" aria-hidden="true">
-              rocket_launch
-            </span>
-          </button>
+          />
         </div>
       )
     }

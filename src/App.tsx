@@ -3,6 +3,7 @@ import { useConvex, useConvexAuth, useMutation } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../convex/_generated/api'
 import { MAX_ROUNDS_PER_GAME } from '../convex/constants'
+import { HostButton } from './components/HostButton'
 import { HostApp } from './components/host/HostApp'
 import { Loader } from './components/Loader'
 import { PitchDeck } from './components/PitchDeck'
@@ -166,19 +167,7 @@ function JoinPage({
         </span>
       </button>
 
-      {import.meta.env.DEV && (
-        <a
-          href="/host"
-          style={{
-            fontSize: 12,
-            color: '#888',
-            textDecoration: 'underline',
-            marginTop: 8,
-          }}
-        >
-          Host a game ↗
-        </a>
-      )}
+      <HostButton navigate={navigate} label="HOST" />
     </main>
   )
 }
@@ -232,17 +221,13 @@ function HostLanding({
           <CaptionLimitPicker value={maxCaptions} onChange={setMaxCaptions} />
         </div>
 
-        <button
-          type="button"
+        <HostButton
+          navigate={navigate}
+          label={creating ? 'CREATING...' : 'HOST A GAME'}
           className="brutal-btn"
           onClick={handleCreate}
           disabled={creating}
-        >
-          <span>{creating ? 'CREATING...' : 'HOST A GAME'}</span>
-          <span className="material-symbols-outlined" aria-hidden="true">
-            videogame_asset
-          </span>
-        </button>
+        />
       </div>
     </main>
   )
