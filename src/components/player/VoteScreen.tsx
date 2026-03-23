@@ -23,12 +23,14 @@ function SwipeableCard({
   onVote,
   onAccepted,
   disabled,
+  showSwipeHint,
 }: {
   candidate: { captionId: Id<'captions'>; text: string }
   imageUrl: string
   onVote: (value: boolean) => Promise<VoteAttemptResult>
   onAccepted: () => void
   disabled: boolean
+  showSwipeHint: boolean
 }) {
   const x = useMotionValue(0)
   const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12])
@@ -102,6 +104,44 @@ function SwipeableCard({
       >
         <h2 className="impact-text">{candidate.text}</h2>
       </div>
+
+      {showSwipeHint && (
+        <motion.div
+          className="vote-swipe-hint"
+          initial={{ opacity: 0, y: 10, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.25, delay: 0.15 }}
+        >
+          <div className="vote-swipe-hint__edge vote-swipe-hint__edge--left">
+            <span className="material-symbols-outlined" aria-hidden="true">
+              arrow_back
+            </span>
+            <span
+              className="material-symbols-outlined vote-swipe-hint__icon"
+              aria-hidden="true"
+            >
+              close
+            </span>
+          </div>
+          <div className="vote-swipe-hint__copy">
+            <span className="vote-swipe-hint__title">SWIPE TO VOTE</span>
+            <span className="vote-swipe-hint__subtitle">
+              LEFT TO PASS, RIGHT TO LIKE
+            </span>
+          </div>
+          <div className="vote-swipe-hint__edge vote-swipe-hint__edge--right">
+            <span
+              className="material-symbols-outlined vote-swipe-hint__icon"
+              aria-hidden="true"
+            >
+              favorite
+            </span>
+            <span className="material-symbols-outlined" aria-hidden="true">
+              arrow_forward
+            </span>
+          </div>
+        </motion.div>
+      )}
 
       {/* Approve overlay */}
       <motion.div
@@ -177,6 +217,7 @@ export function VoteScreen({
   const seconds = useCountdown(round.voteEndsAt)
   const [submitting, setSubmitting] = useState(false)
   const [loadingSnapshot, setLoadingSnapshot] = useState(false)
+  const swipeHintStorageKey = `mixr_vote_swipe_hint_seen_${game._id}_${playerId}`
   const [localCandidates, setLocalCandidates] = useState<
     Array<{ captionId: Id<'captions'>; text: string }>
   >([])
@@ -184,10 +225,29 @@ export function VoteScreen({
     null
   )
   const [snapshotReady, setSnapshotReady] = useState(false)
+  const [hasSeenSwipeHint, setHasSeenSwipeHint] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(swipeHintStorageKey) === 'true'
+    } catch {
+      return false
+    }
+  })
   const { error, clearError, reject } = useActionFeedback()
   const current = localCandidates[0]
   const votingClosed = seconds === 0 || !snapshotReady
   const canVote = !submitting && !votingClosed && current !== undefined
+  const shouldShowSwipeHint =
+    current !== undefined && canVote && !hasSeenSwipeHint && !loadingSnapshot
+
+  useEffect(() => {
+    try {
+      setHasSeenSwipeHint(
+        sessionStorage.getItem(swipeHintStorageKey) === 'true'
+      )
+    } catch {
+      setHasSeenSwipeHint(false)
+    }
+  }, [swipeHintStorageKey])
 
   useEffect(() => {
     if (initializedRoundId === round._id) return
@@ -263,6 +323,19 @@ export function VoteScreen({
     }
   }
 
+  const handleAcceptedVote = () => {
+    setLocalCandidates((existing) => existing.slice(1))
+
+    if (hasSeenSwipeHint) return
+
+    try {
+      sessionStorage.setItem(swipeHintStorageKey, 'true')
+    } catch {
+      // Ignore storage failures; this only affects whether the hint persists.
+    }
+    setHasSeenSwipeHint(true)
+  }
+
   const formatted = String(seconds).padStart(2, '0')
 
   return (
@@ -316,10 +389,9 @@ export function VoteScreen({
                 candidate={current}
                 imageUrl={round.imageUrl}
                 onVote={handleVote}
-                onAccepted={() =>
-                  setLocalCandidates((existing) => existing.slice(1))
-                }
+                onAccepted={handleAcceptedVote}
                 disabled={!canVote}
+                showSwipeHint={shouldShowSwipeHint}
               />
             </motion.div>
           ) : null}
